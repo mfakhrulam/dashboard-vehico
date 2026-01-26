@@ -395,7 +395,7 @@ export default function ServiceForm({
               Batal
             </Button>
           )}
-          <Button type="submit" colorScheme="brand" loading={isSubmitting} disabled={isSubmitting}>
+          <Button type="submit" colorPalette="brand" loading={isSubmitting} disabled={isSubmitting}>
             {submitLabel}
           </Button>
         </HStack>

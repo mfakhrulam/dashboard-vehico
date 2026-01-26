@@ -63,7 +63,7 @@ function StatsCard({ title, value, helperText, icon }: Readonly<StatsCardProps>)
           </Text>
           <Heading size="lg">{value}</Heading>
         </Box>
-        <Box bg="bg" borderWidth="1px" borderColor="border" borderRadius="lg" p={2} color="text">
+        <Box bg="brand.subtle" borderWidth="1px" borderColor="brand.emphasized" borderRadius="lg" p={2} color="brand.fg">
           <Icon as={icon} boxSize={5} />
         </Box>
       </HStack>
@@ -103,7 +103,7 @@ export default function Dashboard() {
                 <HStack gap={3}>
                   <Box
                     bg="brand.solid"
-                    color="white"
+                    color="brand.contrast"
                     borderRadius="full"
                     w="48px"
                     h="48px"
@@ -138,7 +138,7 @@ export default function Dashboard() {
                     </HStack>
                   </Button>
                   <RouterLink to={ROUTES.VEHICLE_CREATE}>
-                    <Button colorScheme="brand" h="48px">
+                    <Button colorPalette="brand" h="48px">
                       <HStack as="span" gap={2}>
                         <Icon as={FiPlus} />
                         <Text>Tambah Kendaraan</Text>
@@ -258,7 +258,7 @@ export default function Dashboard() {
               </Flex>
               <HStack gap={4} overflowX="auto" pb={2} align="stretch">
                 <RouterLink to={ROUTES.VEHICLE_CREATE}>
-                  <Button size="lg" minW="200px" h="56px" colorScheme="brand">
+                  <Button size="lg" minW="200px" h="56px" colorPalette="brand">
                     <HStack as="span" gap={2}>
                       <Icon as={FiPlus} />
                       <Text>Tambah Kendaraan</Text>
@@ -297,13 +297,13 @@ export default function Dashboard() {
                   size="md"
                   h="48px"
                   variant={activeTab === 'owned' ? 'solid' : 'outline'}
-                  colorScheme={activeTab === 'owned' ? 'brand' : undefined}
+                  colorPalette={activeTab === 'owned' ? 'brand' : undefined}
                   onClick={() => setActiveTab('owned')}
                   role="tab"
                   aria-selected={activeTab === 'owned'}
                 >
                   Kendaraan Saya
-                  <Badge ml={2} colorScheme="brand">
+                  <Badge ml={2} colorPalette="brand">
                     {ownedVehicles.length}
                   </Badge>
                 </Button>
@@ -311,13 +311,13 @@ export default function Dashboard() {
                   size="md"
                   h="48px"
                   variant={activeTab === 'shared' ? 'solid' : 'outline'}
-                  colorScheme={activeTab === 'shared' ? 'brand' : undefined}
+                  colorPalette={activeTab === 'shared' ? 'brand' : undefined}
                   onClick={() => setActiveTab('shared')}
                   role="tab"
                   aria-selected={activeTab === 'shared'}
                 >
                   Dibagikan ke Saya
-                  <Badge ml={2} colorScheme="gray">
+                  <Badge ml={2} colorPalette="gray">
                     {sharedVehicles.length}
                   </Badge>
                 </Button>
@@ -365,7 +365,7 @@ export default function Dashboard() {
                       : ROUTES.SERVICE_NEW
                   }
                 >
-                  <Button colorScheme="brand">Catat Service</Button>
+                  <Button colorPalette="brand">Catat Service</Button>
                 </RouterLink>
               </Box>
               <Text fontSize="xs" color="textMuted">

@@ -396,6 +396,7 @@ export default function VehicleCreate() {
 
               <Button
                 type="submit"
+                colorPalette="brand"
                 width="100%"
                 size="lg"
                 loading={createMutation.isPending}

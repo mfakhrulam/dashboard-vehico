@@ -89,7 +89,7 @@ export default function ServiceCreate() {
               service.
             </Text>
             <RouterLink to={ROUTES.VEHICLE_CREATE}>
-              <Button colorScheme="brand">Tambah Kendaraan</Button>
+              <Button colorPalette="brand">Tambah Kendaraan</Button>
             </RouterLink>
           </VStack>
         </Container>

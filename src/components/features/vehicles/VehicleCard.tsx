@@ -55,7 +55,7 @@ export default function VehicleCard({ vehicle }: Readonly<VehicleCardProps>) {
           <Flex justify="space-between" align="start">
             <Heading size="md">{vehicle.name}</Heading>
             {vehicle.permission && (
-              <Badge colorScheme={isOwner ? 'green' : 'blue'}>
+              <Badge colorPalette={isOwner ? 'green' : 'blue'}>
                 {PERMISSION_LEVELS[vehicle.permission]}
               </Badge>
             )}

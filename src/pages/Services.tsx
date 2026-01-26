@@ -72,7 +72,7 @@ export default function Services() {
           description="Kelola semua catatan service kendaraan Anda."
           actions={
             <RouterLink to={ROUTES.SERVICE_NEW}>
-              <Button colorScheme="brand">Tambah Service</Button>
+              <Button colorPalette="brand">Tambah Service</Button>
             </RouterLink>
           }
         />

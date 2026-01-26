@@ -39,7 +39,7 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
       >
         <Container maxW="7xl">
           <Flex justify="space-between" align="center">
-            <Heading size="lg">{APP_NAME}</Heading>
+            <Heading size="lg" color="brand.fg">{APP_NAME}</Heading>
             <HStack gap={3} align="center">
               {user && (
                 <Text fontSize="sm" color="textMuted">
@@ -120,7 +120,7 @@ function NavItem({ label, to, icon, isActive }: Readonly<NavItemProps>) {
     <RouterLink to={to} style={{ flex: 1, textDecoration: 'none' }}>
       <Button
         variant={isActive ? 'solid' : 'ghost'}
-        colorScheme={isActive ? 'brand' : undefined}
+        colorPalette={isActive ? 'brand' : undefined}
         h="56px"
         w="full"
         display="flex"

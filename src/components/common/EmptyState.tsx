@@ -29,7 +29,7 @@ export default function EmptyState({
         )}
         {children}
         {actionLabel && onAction && (
-          <Button colorScheme="brand" onClick={onAction} minW="180px">
+          <Button colorPalette="brand" onClick={onAction} minW="180px">
             {actionLabel}
           </Button>
         )}

@@ -24,7 +24,7 @@ export default function Garage() {
           title="Garasi"
           description="Kelola semua kendaraan yang Anda miliki atau dibagikan."
           actions={
-            <Button colorScheme="brand" onClick={() => navigate(ROUTES.VEHICLE_CREATE)}>
+            <Button colorPalette="brand" onClick={() => navigate(ROUTES.VEHICLE_CREATE)}>
               Tambah Kendaraan
             </Button>
           }
@@ -38,13 +38,13 @@ export default function Garage() {
                 size="md"
                 h="48px"
                 variant={activeTab === 'owned' ? 'solid' : 'outline'}
-                colorScheme={activeTab === 'owned' ? 'brand' : undefined}
+                colorPalette={activeTab === 'owned' ? 'brand' : undefined}
                 onClick={() => setActiveTab('owned')}
                 role="tab"
                 aria-selected={activeTab === 'owned'}
               >
                 Kendaraan Saya
-                <Badge ml={2} colorScheme="brand">
+                <Badge ml={2} colorPalette="brand">
                   {ownedVehicles.length}
                 </Badge>
               </Button>
@@ -52,13 +52,13 @@ export default function Garage() {
                 size="md"
                 h="48px"
                 variant={activeTab === 'shared' ? 'solid' : 'outline'}
-                colorScheme={activeTab === 'shared' ? 'brand' : undefined}
+                colorPalette={activeTab === 'shared' ? 'brand' : undefined}
                 onClick={() => setActiveTab('shared')}
                 role="tab"
                 aria-selected={activeTab === 'shared'}
               >
                 Dibagikan ke Saya
-                <Badge ml={2} colorScheme="gray">
+                <Badge ml={2} colorPalette="gray">
                   {sharedVehicles.length}
                 </Badge>
               </Button>

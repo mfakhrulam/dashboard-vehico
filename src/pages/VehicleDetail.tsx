@@ -95,7 +95,7 @@ export default function VehicleDetail() {
                     <HStack gap={3} flexWrap="wrap">
                       {canEdit && (
                         <RouterLink to={`${ROUTES.SERVICE_NEW}?vehicleId=${vehicle.id}`}>
-                          <Button colorScheme="brand" h="48px">
+                          <Button colorPalette="brand" h="48px">
                             <HStack as="span" gap={2}>
                               <Icon as={FiTool} />
                               <Text>Tambah Service</Text>
