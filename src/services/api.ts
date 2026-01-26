@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL, TOKEN_KEYS } from '@/config/constants';
 import { storage } from '@/utils/storage';
 import { RefreshTokenResponse } from '@/types/auth.types';
+import { useAuthStore } from '@/store/authStore';
 
 // Create axios instance
 export const api = axios.create({
@@ -80,8 +81,7 @@ api.interceptors.response.use(
 
     if (!refreshToken) {
       // No refresh token, logout
-      storage.remove(TOKEN_KEYS.ACCESS_TOKEN);
-      storage.remove(TOKEN_KEYS.REFRESH_TOKEN);
+      useAuthStore.getState().logout();
       window.location.href = '/login';
       throw error;
     }
@@ -112,8 +112,7 @@ api.interceptors.response.use(
     } catch (refreshError) {
       // Refresh token failed, logout
       processQueue(refreshError as Error, null);
-      storage.remove(TOKEN_KEYS.ACCESS_TOKEN);
-      storage.remove(TOKEN_KEYS.REFRESH_TOKEN);
+      useAuthStore.getState().logout();
       window.location.href = '/login';
       throw refreshError;
     } finally {
