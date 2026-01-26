@@ -3,6 +3,7 @@ import { API_BASE_URL, TOKEN_KEYS } from '@/config/constants';
 import { storage } from '@/utils/storage';
 import { RefreshTokenResponse } from '@/types/auth.types';
 import { useAuthStore } from '@/store/authStore';
+import { ApiResponse } from '@/types/common.types';
 
 // Create axios instance
 export const api = axios.create({
@@ -88,12 +89,18 @@ api.interceptors.response.use(
 
     try {
       // Call refresh token endpoint
-      const response = await axios.post<RefreshTokenResponse>(
+      const response = await axios.post<ApiResponse<RefreshTokenResponse>>(
         `${API_BASE_URL}/auth/refresh`,
         { refreshToken }
       );
 
-      const { accessToken, refreshToken: newRefreshToken } = response.data;
+      const tokenData = response.data.data;
+
+      if (!tokenData) {
+        throw new Error('Invalid refresh response');
+      }
+
+      const { accessToken, refreshToken: newRefreshToken } = tokenData;
 
       // Save new tokens
       storage.set(TOKEN_KEYS.ACCESS_TOKEN, accessToken);
