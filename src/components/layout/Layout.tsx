@@ -12,14 +12,18 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
   const { user, logout } = useAuth();
 
   return (
-    <Box minH="100vh">
+    <Box minH="100vh" bg="bg">
       {/* Navbar */}
-      <Box as="nav" bg="bg.muted" borderBottomWidth="1px" py={4}>
+      <Box as="nav" bg="surface" borderBottomWidth="1px" borderColor="border" py={4} position="sticky" top={0} zIndex={10}>
         <Container maxW="7xl">
           <Flex justify="space-between" align="center">
             <Heading size="lg">{APP_NAME}</Heading>
             <Flex gap={4} align="center">
-              {user && <Text fontSize="sm">Halo, {user.name}</Text>}
+              {user && (
+                <Text fontSize="sm" color="textMuted">
+                  Halo, {user.name}
+                </Text>
+              )}
               <ColorModeButton />
               {user && (
                 <Button onClick={() => logout()} size="sm" variant="ghost">

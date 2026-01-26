@@ -5,16 +5,34 @@ const customConfig = defineConfig({
     tokens: {
       colors: {
         brand: {
-          50: { value: '#e3f2fd' },
-          100: { value: '#bbdefb' },
-          200: { value: '#90caf9' },
-          300: { value: '#64b5f6' },
-          400: { value: '#42a5f5' },
-          500: { value: '#2196f3' },
-          600: { value: '#1e88e5' },
-          700: { value: '#1976d2' },
-          800: { value: '#1565c0' },
-          900: { value: '#0d47a1' },
+          50: { value: '#ecfdf5' },
+          100: { value: '#d1fae5' },
+          200: { value: '#a7f3d0' },
+          300: { value: '#6ee7b7' },
+          400: { value: '#34d399' },
+          500: { value: '#10b981' },
+          600: { value: '#059669' },
+          700: { value: '#047857' },
+          800: { value: '#065f46' },
+          900: { value: '#064e3b' },
+        },
+        stone: {
+          50: { value: '#fafaf9' },
+          100: { value: '#f5f5f4' },
+          200: { value: '#e7e5e4' },
+          300: { value: '#d6d3d1' },
+          400: { value: '#a8a29e' },
+          500: { value: '#78716c' },
+          600: { value: '#57534e' },
+          700: { value: '#44403c' },
+          800: { value: '#292524' },
+          900: { value: '#1c1917' },
+        },
+        warning: {
+          500: { value: '#ea580c' },
+        },
+        danger: {
+          500: { value: '#dc2626' },
         },
       },
     },
@@ -29,13 +47,34 @@ const customConfig = defineConfig({
           emphasized: { value: '{colors.brand.200}' },
           focusRing: { value: '{colors.brand.500}' },
         },
+        bg: {
+          value: { base: '{colors.stone.50}', _dark: '{colors.stone.900}' },
+        },
+        surface: {
+          value: { base: 'white', _dark: '{colors.stone.800}' },
+        },
+        text: {
+          value: { base: '{colors.stone.800}', _dark: '{colors.stone.100}' },
+        },
+        textMuted: {
+          value: { base: '{colors.stone.600}', _dark: '{colors.stone.400}' },
+        },
+        border: {
+          value: { base: '{colors.stone.200}', _dark: '{colors.stone.700}' },
+        },
+        warning: {
+          value: '{colors.warning.500}',
+        },
+        danger: {
+          value: '{colors.danger.500}',
+        },
       },
     },
   },
   globalCss: {
     body: {
       bg: 'bg',
-      color: 'fg',
+      color: 'text',
     },
   },
 });
