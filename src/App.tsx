@@ -6,6 +6,8 @@ import Dashboard from '@/pages/Dashboard';
 import VehicleDetail from '@/pages/VehicleDetail';
 import VehicleCreate from '@/pages/VehicleCreate';
 import Profile from '@/pages/Profile';
+import ServiceCreate from '@/pages/ServiceCreate';
+import ServiceEdit from '@/pages/ServiceEdit';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 
 function App() {
@@ -46,6 +48,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.SERVICE_NEW}
+          element={
+            <ProtectedRoute>
+              <ServiceCreate />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.SERVICE_EDIT(':id')}
+          element={
+            <ProtectedRoute>
+              <ServiceEdit />
             </ProtectedRoute>
           }
         />

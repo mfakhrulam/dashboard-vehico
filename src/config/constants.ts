@@ -25,6 +25,7 @@ export const ROUTES = {
   SERVICES: '/services',
   SERVICE_NEW: '/services/new',
   SERVICE_DETAIL: (id: string | number) => `/services/${id}`,
+  SERVICE_EDIT: (id: string | number) => `/services/${id}/edit`,
   PARTS: '/parts',
   PROFILE: '/profile',
 } as const;

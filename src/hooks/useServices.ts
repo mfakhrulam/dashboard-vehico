@@ -24,3 +24,26 @@ export const useServices = (vehicleId: number, page = 1, limit = 20) => {
     refetch,
   };
 };
+
+export const useService = (serviceId: number) => {
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['service', serviceId],
+    queryFn: async () => {
+      const response = await serviceService.getById(serviceId);
+      return response.data;
+    },
+    enabled: !!serviceId,
+  });
+
+  return {
+    service: data,
+    isLoading,
+    error,
+    refetch,
+  };
+};

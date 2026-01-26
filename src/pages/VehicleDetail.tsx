@@ -1,14 +1,14 @@
-import { Container, Heading, VStack, Box, Text, Flex, Badge, SimpleGrid, Button } from '@chakra-ui/react';
+import { Container, Heading, VStack, Box, Text, Flex, Badge, SimpleGrid, Button, HStack } from '@chakra-ui/react';
 import { useParams, Link as RouterLink } from 'react-router';
-import Layout from '@/components/layout/Layout';
 import { useVehicle } from '@/hooks/useVehicles';
 import { useServices } from '@/hooks/useServices';
 import { ROUTES, PERMISSION_LEVELS, SERVICE_TYPES } from '@/config/constants';
 import { formatOdometer, formatDate, formatCurrency } from '@/utils/format';
+import Layout from '@/components/layout/Layout';
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
-  const vehicleId = parseInt(id || '0');
+  const vehicleId = Number.parseInt(id || '0', 10);
 
   const { vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId);
   const { services, isLoading: isLoadingServices } = useServices(vehicleId);
@@ -104,7 +104,7 @@ export default function VehicleDetail() {
                 <Flex justify="space-between" align="center">
                   <Heading size="lg">Riwayat Service</Heading>
                   {canEdit && (
-                    <RouterLink to={ROUTES.SERVICE_NEW}>
+                    <RouterLink to={`${ROUTES.SERVICE_NEW}?vehicleId=${vehicle.id}`}>
                       <Button colorScheme="brand" size="sm">
                         Tambah Service
                       </Button>
@@ -129,7 +129,21 @@ export default function VehicleDetail() {
                           {formatDate(service.serviceDate)}
                         </Text>
                       </VStack>
-                      <Text fontWeight="semibold">{formatOdometer(service.odometer)}</Text>
+                      <VStack align="end" gap={1}>
+                        <Text fontWeight="semibold">{formatOdometer(service.odometer)}</Text>
+                        {canEdit && (
+                          <HStack gap={2}>
+                            <RouterLink to={ROUTES.SERVICE_EDIT(service.id)}>
+                              <Button size="xs" variant="outline">
+                                Edit
+                              </Button>
+                            </RouterLink>
+                            <Button size="xs" variant="ghost" disabled>
+                              Hapus
+                            </Button>
+                          </HStack>
+                        )}
+                      </VStack>
                     </Flex>
 
                     {service.partsReplaced && service.partsReplaced.length > 0 && (
@@ -138,8 +152,8 @@ export default function VehicleDetail() {
                           Part yang diganti:
                         </Text>
                         <VStack align="start" gap={1}>
-                          {service.partsReplaced.map((part, idx) => (
-                            <Text key={idx} fontSize="sm">
+                          {service.partsReplaced.map((part) => (
+                            <Text key={`${part.name}-${part.brand ?? 'na'}-${part.quantity ?? 1}`} fontSize="sm">
                               • {part.name}
                               {part.brand && ` (${part.brand})`}
                               {part.quantity && ` x${part.quantity}`}

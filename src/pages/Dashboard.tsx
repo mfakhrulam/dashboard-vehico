@@ -14,14 +14,16 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useNavigate } from 'react-router';
 import { FiBarChart2, FiBell, FiChevronDown, FiPlus, FiTool } from 'react-icons/fi';
-import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicles } from '@/hooks/useVehicles';
-import { PERMISSION_LEVELS, ROUTES } from '@/config/constants';
-import { formatCurrency, formatOdometer } from '@/utils/format';
-import type { VehicleResponse } from '@/types/vehicle.types';
+import { ROUTES } from '@/config/constants';
+import { formatCurrency } from '@/utils/format';
+import EmptyState from '@/components/common/EmptyState';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import VehicleCard from '@/components/features/vehicles/VehicleCard';
+import Layout from '@/components/layout/Layout';
 
 interface StatsCardProps {
   title: string;
@@ -65,85 +67,8 @@ function StatsCard({ title, value, helperText }: Readonly<StatsCardProps>) {
   );
 }
 
-function VehicleCard({ vehicle }: Readonly<{ vehicle: VehicleResponse }>) {
-  const isOwner = vehicle.permission === 'owner' || !vehicle.permission;
-
-  return (
-    <RouterLink to={ROUTES.VEHICLE_DETAIL(vehicle.id)} style={{ textDecoration: 'none' }}>
-      <Box
-        bg="surface"
-        p={6}
-        borderRadius="xl"
-        borderWidth="1px"
-        borderColor="border"
-        _hover={{ borderColor: 'brand.solid', transform: 'translateY(-2px)' }}
-        transition="all 0.2s"
-        position="relative"
-        cursor="pointer"
-      >
-        {vehicle.photoUrl ? (
-          <Box
-            h="180px"
-            mb={4}
-            borderRadius="lg"
-            backgroundImage={`url(${vehicle.photoUrl})`}
-            backgroundSize="cover"
-            backgroundPosition="center"
-          />
-        ) : (
-          <Box
-            h="180px"
-            mb={4}
-            borderRadius="lg"
-            borderWidth="1px"
-            borderColor="border"
-            bg="bg"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <Text fontSize="sm" color="textMuted">
-              Foto kendaraan belum tersedia
-            </Text>
-          </Box>
-        )}
-
-        <VStack align="stretch" gap={2}>
-          <Flex justify="space-between" align="start">
-            <Heading size="md">{vehicle.name}</Heading>
-            {vehicle.permission && (
-              <Badge colorScheme={isOwner ? 'green' : 'blue'}>
-                {PERMISSION_LEVELS[vehicle.permission]}
-              </Badge>
-            )}
-          </Flex>
-
-          <Text color="textMuted">
-            {vehicle.brand} {vehicle.model} ({vehicle.year})
-          </Text>
-
-          {vehicle.licensePlate && (
-            <Text fontSize="sm" fontWeight="semibold">
-              {vehicle.licensePlate}
-            </Text>
-          )}
-
-          <Text fontSize="sm" color="textMuted">
-            Odometer: {formatOdometer(vehicle.currentOdometer)}
-          </Text>
-
-          {vehicle.sharedBy && (
-            <Text fontSize="xs" color="textMuted">
-              Dibagikan oleh: {vehicle.sharedBy.name}
-            </Text>
-          )}
-        </VStack>
-      </Box>
-    </RouterLink>
-  );
-}
-
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { ownedVehicles, sharedVehicles, isLoading } = useVehicles();
   const [activeTab, setActiveTab] = useState<'owned' | 'shared'>('owned');
@@ -274,7 +199,13 @@ export default function Dashboard() {
                     </HStack>
                   </Button>
                 </RouterLink>
-                <RouterLink to={ROUTES.SERVICE_NEW}>
+                <RouterLink
+                  to={
+                    primaryVehicle
+                      ? `${ROUTES.SERVICE_NEW}?vehicleId=${primaryVehicle.id}`
+                      : ROUTES.SERVICE_NEW
+                  }
+                >
                   <Button size="lg" minW="200px" h="56px" variant="outline">
                     <HStack as="span" gap={2}>
                       <Icon as={FiTool} />
@@ -325,21 +256,15 @@ export default function Dashboard() {
               </HStack>
             </Flex>
 
-            {isLoading && (
-              <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={6}>
-                <Text color="textMuted">Memuat data kendaraan...</Text>
-              </Box>
-            )}
+            {isLoading && <LoadingSpinner label="Memuat data kendaraan..." />}
 
             {!isLoading && ownedVehicles.length === 0 && sharedVehicles.length === 0 && (
-              <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" textAlign="center" py={12}>
-                <Text fontSize="lg" color="textMuted" mb={4}>
-                  Belum ada kendaraan. Tambahkan kendaraan pertama Anda!
-                </Text>
-                <RouterLink to={ROUTES.VEHICLE_CREATE}>
-                  <Button colorScheme="brand">Tambah Kendaraan</Button>
-                </RouterLink>
-              </Box>
+              <EmptyState
+                title="Belum ada kendaraan"
+                description="Tambahkan kendaraan pertama Anda untuk mulai mencatat service."
+                actionLabel="Tambah Kendaraan"
+                onAction={() => navigate(ROUTES.VEHICLE_CREATE)}
+              />
             )}
 
             {!isLoading && totalVehicles > 0 && (
@@ -365,7 +290,13 @@ export default function Dashboard() {
                 <Text color="textMuted" mb={4}>
                   Belum ada service terbaru.
                 </Text>
-                <RouterLink to={ROUTES.SERVICE_NEW}>
+                <RouterLink
+                  to={
+                    primaryVehicle
+                      ? `${ROUTES.SERVICE_NEW}?vehicleId=${primaryVehicle.id}`
+                      : ROUTES.SERVICE_NEW
+                  }
+                >
                   <Button colorScheme="brand">Catat Service</Button>
                 </RouterLink>
               </Box>
