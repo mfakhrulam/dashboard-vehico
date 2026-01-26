@@ -17,6 +17,7 @@ export const ROUTES = {
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
   VEHICLES: '/vehicles',
+  GARAGE: '/garage',
   VEHICLE_NEW: '/vehicles/new',
   VEHICLE_CREATE: '/vehicles/create',
   VEHICLE_DETAIL: (id: string | number) => `/vehicles/${id}`,

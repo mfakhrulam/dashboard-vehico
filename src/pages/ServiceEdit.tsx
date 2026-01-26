@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Box, Container, Heading, Text, VStack } from '@chakra-ui/react';
+import { Box, Container, Text, VStack } from '@chakra-ui/react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useService } from '@/hooks/useServices';
@@ -7,6 +7,7 @@ import { ROUTES } from '@/config/constants';
 import { serviceService } from '@/services/service.service';
 import { parseApiError, FormErrors } from '@/utils/error';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/layout/PageHeader';
 import ServiceForm from '@/components/features/services/ServiceForm';
 import { toaster } from '@/components/ui/toaster';
 import type { CreateServiceRequest, UpdateServiceRequest } from '@/types/service.types';
@@ -59,6 +60,15 @@ export default function ServiceEdit() {
     return (
       <Layout>
         <Container maxW="2xl">
+          <PageHeader
+            title="Edit Service"
+            description="Perbarui catatan perawatan kendaraan Anda."
+            breadcrumbs={[
+              { label: 'Dashboard', to: ROUTES.DASHBOARD },
+              { label: 'Service', to: `${ROUTES.DASHBOARD}#services` },
+              { label: 'Edit Service' },
+            ]}
+          />
           <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={6}>
             <Text color="textMuted">Memuat data service...</Text>
           </Box>
@@ -71,12 +81,16 @@ export default function ServiceEdit() {
     <Layout>
       <Box py={6}>
         <Container maxW="2xl">
+          <PageHeader
+            title="Edit Service"
+            description="Perbarui catatan perawatan kendaraan Anda."
+            breadcrumbs={[
+              { label: 'Dashboard', to: ROUTES.DASHBOARD },
+              { label: 'Service', to: `${ROUTES.DASHBOARD}#services` },
+              { label: 'Edit Service' },
+            ]}
+          />
           <VStack gap={6} align="stretch" bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={{ base: 5, md: 6 }}>
-            <VStack gap={1} align="start">
-              <Heading size="lg">Edit Service</Heading>
-              <Text color="textMuted">Perbarui catatan perawatan kendaraan Anda.</Text>
-            </VStack>
-
             <ServiceForm
               vehicleId={service.vehicleId}
               initialValues={initialValues}

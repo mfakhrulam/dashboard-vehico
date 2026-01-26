@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { ElementType } from 'react';
 import {
   Badge,
   Box,
@@ -15,11 +16,11 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router';
-import { FiBarChart2, FiBell, FiChevronDown, FiPlus, FiTool } from 'react-icons/fi';
+import { FiActivity, FiBarChart2, FiBell, FiChevronDown, FiClock, FiDollarSign, FiPlus, FiTool, FiTruck } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicles } from '@/hooks/useVehicles';
 import { ROUTES } from '@/config/constants';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency, formatOdometer } from '@/utils/format';
 import EmptyState from '@/components/common/EmptyState';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import VehicleCard from '@/components/features/vehicles/VehicleCard';
@@ -29,6 +30,7 @@ interface StatsCardProps {
   title: string;
   value: string;
   helperText: string;
+  icon: ElementType;
 }
 
 interface HealthMetric {
@@ -51,15 +53,20 @@ const getInitials = (name: string) =>
     .map((part) => part[0]?.toUpperCase())
     .join('');
 
-function StatsCard({ title, value, helperText }: Readonly<StatsCardProps>) {
+function StatsCard({ title, value, helperText, icon }: Readonly<StatsCardProps>) {
   return (
     <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={5}>
-      <Text fontSize="sm" color="textMuted" mb={2}>
-        {title}
-      </Text>
-      <Heading size="lg" mb={1}>
-        {value}
-      </Heading>
+      <HStack justify="space-between" align="start" mb={3}>
+        <Box>
+          <Text fontSize="sm" color="textMuted" mb={1}>
+            {title}
+          </Text>
+          <Heading size="lg">{value}</Heading>
+        </Box>
+        <Box bg="bg" borderWidth="1px" borderColor="border" borderRadius="lg" p={2} color="text">
+          <Icon as={icon} boxSize={5} />
+        </Box>
+      </HStack>
       <Text fontSize="xs" color="textMuted">
         {helperText}
       </Text>
@@ -91,19 +98,20 @@ export default function Dashboard() {
       <Container maxW="7xl">
         <VStack gap={8} align="stretch">
           <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={{ base: 5, md: 6 }}>
-            <Flex direction={{ base: 'column', md: 'row' }} gap={6} justify="space-between" align={{ base: 'start', md: 'center' }}>
-              <Stack gap={3} flex="1">
+            <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} alignItems="stretch">
+              <Stack gap={4} justify="space-between">
                 <HStack gap={3}>
                   <Box
                     bg="brand.solid"
                     color="white"
                     borderRadius="full"
-                    w="44px"
-                    h="44px"
+                    w="48px"
+                    h="48px"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                     fontWeight="bold"
+                    fontSize="md"
                   >
                     {getInitials(user?.name ?? 'User')}
                   </Box>
@@ -118,35 +126,93 @@ export default function Dashboard() {
                 <Text color="textMuted" maxW="lg">
                   Pantau kesehatan kendaraan dan catat servis terbaru. Semua catatan tersimpan rapi untuk Anda dan tim.
                 </Text>
-              </Stack>
 
-              <HStack gap={3} align="center">
-                <IconButton aria-label="Notifikasi" variant="outline">
-                  <Icon as={FiBell} />
-                </IconButton>
-                <Button variant="outline">
-                  <HStack as="span" gap={2}>
-                    <Text>Pengaturan</Text>
-                    <Icon as={FiChevronDown} />
-                  </HStack>
-                </Button>
-                <RouterLink to={ROUTES.VEHICLE_CREATE}>
-                  <Button colorScheme="brand">
+                <HStack gap={3} flexWrap="wrap" align="center">
+                  <IconButton aria-label="Notifikasi" variant="outline" size="lg">
+                    <Icon as={FiBell} />
+                  </IconButton>
+                  <Button variant="outline" h="48px">
                     <HStack as="span" gap={2}>
-                      <Icon as={FiPlus} />
-                      <Text>Tambah Kendaraan</Text>
+                      <Text>Pengaturan</Text>
+                      <Icon as={FiChevronDown} />
                     </HStack>
                   </Button>
-                </RouterLink>
-              </HStack>
-            </Flex>
+                  <RouterLink to={ROUTES.VEHICLE_CREATE}>
+                    <Button colorScheme="brand" h="48px">
+                      <HStack as="span" gap={2}>
+                        <Icon as={FiPlus} />
+                        <Text>Tambah Kendaraan</Text>
+                      </HStack>
+                    </Button>
+                  </RouterLink>
+                </HStack>
+              </Stack>
+
+              <Box bg="bg" borderWidth="1px" borderColor="border" borderRadius="xl" p={4} display="flex" flexDirection="column" gap={4}>
+                <Box
+                  borderRadius="lg"
+                  overflow="hidden"
+                  h={{ base: '160px', md: '190px' }}
+                  backgroundImage={primaryVehicle?.photoUrl ? `url(${primaryVehicle.photoUrl})` : undefined}
+                  backgroundSize="cover"
+                  backgroundPosition="center"
+                  bg={primaryVehicle?.photoUrl ? undefined : 'brand.muted'}
+                >
+                  {!primaryVehicle?.photoUrl && (
+                    <Flex h="full" align="center" justify="center">
+                      <Icon as={FiTruck} boxSize={10} color="brand.solid" />
+                    </Flex>
+                  )}
+                </Box>
+
+                <Flex justify="space-between" align="center" gap={4} flexWrap="wrap">
+                  <Box>
+                    <Text fontSize="sm" color="textMuted">
+                      Kendaraan aktif
+                    </Text>
+                    <Heading size="sm">
+                      {primaryVehicle ? primaryVehicle.name : 'Belum ada kendaraan'}
+                    </Heading>
+                    <Text fontSize="sm" color="textMuted">
+                      {primaryVehicle ? `${primaryVehicle.brand} ${primaryVehicle.model}` : 'Tambahkan kendaraan untuk mulai.'}
+                    </Text>
+                  </Box>
+                  {primaryVehicle && (
+                    <RouterLink to={ROUTES.VEHICLE_DETAIL(primaryVehicle.id)}>
+                      <Button variant="outline" size="sm" h="40px">
+                        Lihat Detail
+                      </Button>
+                    </RouterLink>
+                  )}
+                </Flex>
+
+                {primaryVehicle && (
+                  <HStack gap={4} flexWrap="wrap">
+                    <Box>
+                      <Text fontSize="xs" color="textMuted">
+                        Odometer
+                      </Text>
+                      <Text fontWeight="semibold">{formatOdometer(primaryVehicle.currentOdometer)}</Text>
+                    </Box>
+                    {primaryVehicle.licensePlate && (
+                      <Box>
+                        <Text fontSize="xs" color="textMuted">
+                          Plat Nomor
+                        </Text>
+                        <Text fontWeight="semibold">{primaryVehicle.licensePlate}</Text>
+                      </Box>
+                    )}
+                  </HStack>
+                )}
+              </Box>
+            </SimpleGrid>
           </Box>
 
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4}>
-            <StatsCard title="Total Kendaraan" value={`${totalVehicles}`} helperText="Termasuk kendaraan dibagikan" />
-            <StatsCard title="Total Service" value="0" helperText="Service bulan ini" />
-            <StatsCard title="Service Mendatang" value="0" helperText="Dalam 30 hari" />
-            <StatsCard title="Total Biaya" value={formatCurrency(0)} helperText="Pengeluaran bulan ini" />
+            <StatsCard title="Total Kendaraan" value={`${totalVehicles}`} helperText="Termasuk kendaraan dibagikan" icon={FiTruck} />
+            <StatsCard title="Total Service" value="0" helperText="Service bulan ini" icon={FiActivity} />
+            <StatsCard title="Service Mendatang" value="0" helperText="Dalam 30 hari" icon={FiClock} />
+            <StatsCard title="Total Biaya" value={formatCurrency(0)} helperText="Pengeluaran bulan ini" icon={FiDollarSign} />
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, lg: 3 }} gap={6}>
@@ -165,8 +231,8 @@ export default function Dashboard() {
                         {metric.value}%
                       </Text>
                     </Flex>
-                    <Box h="6px" borderRadius="full" bg="border" overflow="hidden">
-                      <Box h="6px" bg={statusColorMap[metric.status]} width={`${metric.value}%`} />
+                    <Box h="8px" borderRadius="full" bg="border" overflow="hidden">
+                      <Box h="8px" bg={statusColorMap[metric.status]} width={`${metric.value}%`} />
                     </Box>
                   </Box>
                 ))}
@@ -228,7 +294,8 @@ export default function Dashboard() {
               <Heading size="lg">Garasi Anda</Heading>
               <HStack gap={2} role="tablist" aria-label="Tabs kendaraan">
                 <Button
-                  size="sm"
+                  size="md"
+                  h="48px"
                   variant={activeTab === 'owned' ? 'solid' : 'outline'}
                   colorScheme={activeTab === 'owned' ? 'brand' : undefined}
                   onClick={() => setActiveTab('owned')}
@@ -241,7 +308,8 @@ export default function Dashboard() {
                   </Badge>
                 </Button>
                 <Button
-                  size="sm"
+                  size="md"
+                  h="48px"
                   variant={activeTab === 'shared' ? 'solid' : 'outline'}
                   colorScheme={activeTab === 'shared' ? 'brand' : undefined}
                   onClick={() => setActiveTab('shared')}

@@ -3,11 +3,13 @@ import { ROUTES } from '@/config/constants';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
+import Garage from '@/pages/Garage';
 import VehicleDetail from '@/pages/VehicleDetail';
 import VehicleCreate from '@/pages/VehicleCreate';
 import Profile from '@/pages/Profile';
 import ServiceCreate from '@/pages/ServiceCreate';
 import ServiceEdit from '@/pages/ServiceEdit';
+import Services from '@/pages/Services';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 
 function App() {
@@ -24,6 +26,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.GARAGE}
+          element={
+            <ProtectedRoute>
+              <Garage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.SERVICES}
+          element={
+            <ProtectedRoute>
+              <Services />
             </ProtectedRoute>
           }
         />

@@ -17,6 +17,7 @@ import { ROUTES } from '@/config/constants';
 import { serviceService } from '@/services/service.service';
 import { parseApiError, FormErrors } from '@/utils/error';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/layout/PageHeader';
 import ServiceForm from '@/components/features/services/ServiceForm';
 import { toaster } from '@/components/ui/toaster';
 import type { CreateServiceRequest } from '@/types/service.types';
@@ -65,6 +66,15 @@ export default function ServiceCreate() {
     return (
       <Layout>
         <Container maxW="lg">
+          <PageHeader
+            title="Catat Service"
+            description="Simpan catatan perawatan kendaraan Anda."
+            breadcrumbs={[
+              { label: 'Dashboard', to: ROUTES.DASHBOARD },
+              { label: 'Service', to: `${ROUTES.DASHBOARD}#services` },
+              { label: 'Catat Service' },
+            ]}
+          />
           <VStack
             gap={4}
             bg="surface"
@@ -91,6 +101,15 @@ export default function ServiceCreate() {
     <Layout>
       <Box py={6}>
         <Container maxW="2xl">
+          <PageHeader
+            title="Catat Service"
+            description="Simpan catatan perawatan kendaraan Anda."
+            breadcrumbs={[
+              { label: 'Dashboard', to: ROUTES.DASHBOARD },
+              { label: 'Service', to: `${ROUTES.DASHBOARD}#services` },
+              { label: 'Catat Service' },
+            ]}
+          />
           <VStack
             gap={6}
             align="stretch"
@@ -100,11 +119,6 @@ export default function ServiceCreate() {
             borderRadius="xl"
             p={{ base: 5, md: 6 }}
           >
-            <VStack gap={1} align="start">
-              <Heading size="lg">Catat Service</Heading>
-              <Text color="textMuted">Simpan catatan perawatan kendaraan Anda.</Text>
-            </VStack>
-
             <VStack align="stretch" gap={4}>
               <FieldWrapper label="Pilih Kendaraan">
                 <NativeSelect.Root size="lg">

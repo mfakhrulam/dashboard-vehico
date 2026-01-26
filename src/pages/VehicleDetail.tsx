@@ -1,10 +1,13 @@
-import { Container, Heading, VStack, Box, Text, Flex, Badge, SimpleGrid, Button, HStack } from '@chakra-ui/react';
-import { useParams, Link as RouterLink } from 'react-router';
+import { Box, Button, Container, Flex, Heading, HStack, Icon, SimpleGrid, Stack, Text, VStack } from '@chakra-ui/react';
+import type { ElementType } from 'react';
+import { Link as RouterLink, useParams } from 'react-router';
+import { FiActivity, FiCalendar, FiDollarSign, FiEdit2, FiShare2, FiTool, FiUser } from 'react-icons/fi';
 import { useVehicle } from '@/hooks/useVehicles';
 import { useServices } from '@/hooks/useServices';
 import { ROUTES, PERMISSION_LEVELS, SERVICE_TYPES } from '@/config/constants';
 import { formatOdometer, formatDate, formatCurrency } from '@/utils/format';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +15,8 @@ export default function VehicleDetail() {
 
   const { vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId);
   const { services, isLoading: isLoadingServices } = useServices(vehicleId);
+
+  const latestService = services[0];
 
   const isOwner = vehicle?.permission === 'owner' || !vehicle?.permission;
   const canEdit = vehicle?.permission === 'owner' || vehicle?.permission === 'edit';
@@ -24,121 +29,158 @@ export default function VehicleDetail() {
 
           {vehicle && (
             <>
-              {/* Vehicle Info */}
-              <Box bg="bg.muted" p={6} borderRadius="lg" borderWidth="1px">
-                <Flex justify="space-between" align="start" mb={4}>
-                  <VStack align="start" gap={2}>
-                    <Flex align="center" gap={3}>
-                      <Heading size="xl">{vehicle.name}</Heading>
-                      {vehicle.permission && (
-                        <Badge colorScheme={isOwner ? 'green' : 'blue'} fontSize="md">
-                          {PERMISSION_LEVELS[vehicle.permission]}
-                        </Badge>
-                      )}
-                    </Flex>
-                    <Text fontSize="lg" color="fg.muted">
-                      {vehicle.brand} {vehicle.model} ({vehicle.year})
-                    </Text>
-                  </VStack>
-
-                  {isOwner && (
-                    <RouterLink to={ROUTES.VEHICLE_EDIT(vehicle.id)}>
-                      <Button size="sm">
-                        Edit
-                      </Button>
-                    </RouterLink>
-                  )}
-                </Flex>
-
-                {vehicle.photoUrl && (
+              <PageHeader
+                title="Detail Kendaraan"
+                description={vehicle.name}
+                breadcrumbs={[
+                  { label: 'Dashboard', to: ROUTES.DASHBOARD },
+                  { label: 'Garasi', to: ROUTES.GARAGE },
+                  { label: vehicle.name },
+                ]}
+              />
+              <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={{ base: 5, md: 6 }}>
+                <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} alignItems="stretch">
                   <Box
-                    h="300px"
-                    mb={4}
-                    borderRadius="md"
-                    backgroundImage={`url(${vehicle.photoUrl})`}
+                    borderRadius="xl"
+                    overflow="hidden"
+                    minH={{ base: '220px', md: '280px' }}
+                    backgroundImage={vehicle.photoUrl ? `url(${vehicle.photoUrl})` : undefined}
                     backgroundSize="cover"
                     backgroundPosition="center"
-                  />
-                )}
-
-                <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-                  {vehicle.licensePlate && (
-                    <Box>
-                      <Text fontWeight="semibold" mb={1}>
-                        Plat Nomor
-                      </Text>
-                      <Text>{vehicle.licensePlate}</Text>
-                    </Box>
-                  )}
-
-                  <Box>
-                    <Text fontWeight="semibold" mb={1}>
-                      Odometer
-                    </Text>
-                    <Text>{formatOdometer(vehicle.currentOdometer)}</Text>
+                    bg={vehicle.photoUrl ? undefined : 'bg'}
+                    borderWidth="1px"
+                    borderColor="border"
+                  >
+                    {!vehicle.photoUrl && (
+                      <Flex h="full" align="center" justify="center">
+                        <Icon as={FiTool} boxSize={12} color="textMuted" />
+                      </Flex>
+                    )}
                   </Box>
 
-                  {vehicle.sharedBy && (
+                  <Stack gap={4} justify="space-between">
                     <Box>
-                      <Text fontWeight="semibold" mb={1}>
-                        Dibagikan oleh
+                      <HStack gap={3} align="center" flexWrap="wrap">
+                        <Heading size="lg">{vehicle.name}</Heading>
+                        {vehicle.permission && (
+                          <Box
+                            px={3}
+                            py={1}
+                            borderRadius="full"
+                            bg={isOwner ? 'brand.muted' : 'bg'}
+                            borderWidth="1px"
+                            borderColor="border"
+                            fontSize="sm"
+                            fontWeight="semibold"
+                          >
+                            {PERMISSION_LEVELS[vehicle.permission]}
+                          </Box>
+                        )}
+                      </HStack>
+                      <Text fontSize="md" color="textMuted">
+                        {vehicle.brand} {vehicle.model} ({vehicle.year})
                       </Text>
-                      <Text>{vehicle.sharedBy.name}</Text>
                     </Box>
-                  )}
+
+                    <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+                      {vehicle.licensePlate && (
+                        <InfoTile label="Plat Nomor" value={vehicle.licensePlate} icon={FiActivity} />
+                      )}
+                      <InfoTile label="Odometer" value={formatOdometer(vehicle.currentOdometer)} icon={FiActivity} />
+                      {vehicle.sharedBy && (
+                        <InfoTile label="Dibagikan oleh" value={vehicle.sharedBy.name} icon={FiUser} />
+                      )}
+                    </SimpleGrid>
+
+                    <HStack gap={3} flexWrap="wrap">
+                      {canEdit && (
+                        <RouterLink to={`${ROUTES.SERVICE_NEW}?vehicleId=${vehicle.id}`}>
+                          <Button colorScheme="brand" h="48px">
+                            <HStack as="span" gap={2}>
+                              <Icon as={FiTool} />
+                              <Text>Tambah Service</Text>
+                            </HStack>
+                          </Button>
+                        </RouterLink>
+                      )}
+                      {isOwner && (
+                        <RouterLink to={ROUTES.VEHICLE_EDIT(vehicle.id)}>
+                          <Button variant="outline" h="48px">
+                            <HStack as="span" gap={2}>
+                              <Icon as={FiEdit2} />
+                              <Text>Edit Kendaraan</Text>
+                            </HStack>
+                          </Button>
+                        </RouterLink>
+                      )}
+                      {isOwner && (
+                        <RouterLink to={ROUTES.VEHICLE_SHARE(vehicle.id)}>
+                          <Button variant="outline" h="48px">
+                            <HStack as="span" gap={2}>
+                              <Icon as={FiShare2} />
+                              <Text>Kelola Berbagi</Text>
+                            </HStack>
+                          </Button>
+                        </RouterLink>
+                      )}
+                    </HStack>
+                  </Stack>
                 </SimpleGrid>
-
-                {isOwner && (
-                  <Box mt={4}>
-                    <RouterLink to={ROUTES.VEHICLE_SHARE(vehicle.id)}>
-                      <Button size="sm" variant="outline">
-                        Kelola Berbagi
-                      </Button>
-                    </RouterLink>
-                  </Box>
-                )}
               </Box>
 
-              {/* Service History */}
+              <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
+                <SummaryTile label="Odometer Terakhir" value={formatOdometer(vehicle.currentOdometer)} icon={FiActivity} />
+                <SummaryTile label="Service Terakhir" value={latestService ? formatDate(latestService.serviceDate) : '-'} icon={FiCalendar} />
+                <SummaryTile label="Biaya Terakhir" value={latestService?.cost ? formatCurrency(latestService.cost) : '-'} icon={FiDollarSign} />
+              </SimpleGrid>
+
               <VStack align="stretch" gap={4}>
-                <Flex justify="space-between" align="center">
+                <Flex justify="space-between" align={{ base: 'start', md: 'center' }} gap={3} direction={{ base: 'column', md: 'row' }}>
                   <Heading size="lg">Riwayat Service</Heading>
-                  {canEdit && (
-                    <RouterLink to={`${ROUTES.SERVICE_NEW}?vehicleId=${vehicle.id}`}>
-                      <Button colorScheme="brand" size="sm">
-                        Tambah Service
-                      </Button>
-                    </RouterLink>
-                  )}
+                  <Text fontSize="sm" color="textMuted">
+                    Total catatan: {services.length}
+                  </Text>
                 </Flex>
 
                 {isLoadingServices && <Text>Loading...</Text>}
 
                 {!isLoadingServices && services.length === 0 && (
-                  <Box textAlign="center" py={8} bg="bg.subtle" borderRadius="lg">
-                    <Text color="fg.muted">Belum ada riwayat service</Text>
+                  <Box textAlign="center" py={8} bg="bg" borderRadius="lg" borderWidth="1px" borderColor="border">
+                    <Text color="textMuted">Belum ada riwayat service</Text>
                   </Box>
                 )}
 
                 {services.map((service) => (
-                  <Box key={service.id} bg="bg.muted" p={6} borderRadius="lg" borderWidth="1px">
-                    <Flex justify="space-between" align="start" mb={3}>
-                      <VStack align="start" gap={1}>
-                        <Badge colorScheme="blue">{SERVICE_TYPES[service.serviceType]}</Badge>
-                        <Text fontSize="sm" color="fg.muted">
-                          {formatDate(service.serviceDate)}
-                        </Text>
+                  <Box key={service.id} bg="surface" p={6} borderRadius="xl" borderWidth="1px" borderColor="border">
+                    <Flex justify="space-between" align="start" mb={3} gap={4} flexWrap="wrap">
+                      <VStack align="start" gap={2}>
+                        <Box
+                          px={3}
+                          py={1}
+                          borderRadius="full"
+                          bg="bg"
+                          borderWidth="1px"
+                          borderColor="border"
+                          fontSize="sm"
+                          fontWeight="semibold"
+                        >
+                          {SERVICE_TYPES[service.serviceType]}
+                        </Box>
+                        <HStack gap={2} color="textMuted" fontSize="sm">
+                          <Icon as={FiCalendar} />
+                          <Text>{formatDate(service.serviceDate)}</Text>
+                        </HStack>
                       </VStack>
-                      <VStack align="end" gap={1}>
+                      <VStack align="end" gap={2}>
                         <Text fontWeight="semibold">{formatOdometer(service.odometer)}</Text>
                         {canEdit && (
                           <HStack gap={2}>
                             <RouterLink to={ROUTES.SERVICE_EDIT(service.id)}>
-                              <Button size="xs" variant="outline">
+                              <Button size="sm" variant="outline" h="36px">
                                 Edit
                               </Button>
                             </RouterLink>
-                            <Button size="xs" variant="ghost" disabled>
+                            <Button size="sm" variant="ghost" h="36px" disabled>
                               Hapus
                             </Button>
                           </HStack>
@@ -147,13 +189,13 @@ export default function VehicleDetail() {
                     </Flex>
 
                     {service.partsReplaced && service.partsReplaced.length > 0 && (
-                      <Box mb={2}>
+                      <Box mb={3}>
                         <Text fontWeight="semibold" fontSize="sm" mb={1}>
-                          Part yang diganti:
+                          Part yang diganti
                         </Text>
                         <VStack align="start" gap={1}>
                           {service.partsReplaced.map((part) => (
-                            <Text key={`${part.name}-${part.brand ?? 'na'}-${part.quantity ?? 1}`} fontSize="sm">
+                            <Text key={`${part.name}-${part.brand ?? 'na'}-${part.quantity ?? 1}`} fontSize="sm" color="textMuted">
                               • {part.name}
                               {part.brand && ` (${part.brand})`}
                               {part.quantity && ` x${part.quantity}`}
@@ -163,26 +205,28 @@ export default function VehicleDetail() {
                       </Box>
                     )}
 
-                    {service.cost !== null && (
-                      <Text fontSize="sm">
-                        <Text as="span" fontWeight="semibold">
-                          Biaya:
-                        </Text>{' '}
-                        {formatCurrency(service.cost)}
-                      </Text>
-                    )}
+                    <SimpleGrid columns={{ base: 1, md: 2 }} gap={2}>
+                      {service.cost !== null && (
+                        <Text fontSize="sm">
+                          <Text as="span" fontWeight="semibold">
+                            Biaya:
+                          </Text>{' '}
+                          {formatCurrency(service.cost)}
+                        </Text>
+                      )}
 
-                    {service.workshopName && (
-                      <Text fontSize="sm">
-                        <Text as="span" fontWeight="semibold">
-                          Bengkel:
-                        </Text>{' '}
-                        {service.workshopName}
-                      </Text>
-                    )}
+                      {service.workshopName && (
+                        <Text fontSize="sm">
+                          <Text as="span" fontWeight="semibold">
+                            Bengkel:
+                          </Text>{' '}
+                          {service.workshopName}
+                        </Text>
+                      )}
+                    </SimpleGrid>
 
                     {service.notes && (
-                      <Text fontSize="sm" mt={2} color="fg.muted">
+                      <Text fontSize="sm" mt={2} color="textMuted">
                         {service.notes}
                       </Text>
                     )}
@@ -190,7 +234,7 @@ export default function VehicleDetail() {
                     {service.receiptPhotoUrl && (
                       <Box
                         mt={3}
-                        h="150px"
+                        h="170px"
                         borderRadius="md"
                         backgroundImage={`url(${service.receiptPhotoUrl})`}
                         backgroundSize="cover"
@@ -198,9 +242,10 @@ export default function VehicleDetail() {
                       />
                     )}
 
-                    <Text fontSize="xs" color="fg.subtle" mt={2}>
-                      Oleh: {service.performedBy.name}
-                    </Text>
+                    <HStack mt={3} gap={2} fontSize="xs" color="textMuted">
+                      <Icon as={FiUser} />
+                      <Text>Oleh: {service.performedBy.name}</Text>
+                    </HStack>
                   </Box>
                 ))}
               </VStack>
@@ -209,5 +254,37 @@ export default function VehicleDetail() {
         </VStack>
       </Container>
     </Layout>
+  );
+}
+
+interface InfoTileProps {
+  label: string;
+  value: string;
+  icon: ElementType;
+}
+
+function InfoTile({ label, value, icon }: Readonly<InfoTileProps>) {
+  return (
+    <Box bg="bg" borderWidth="1px" borderColor="border" borderRadius="lg" p={3}>
+      <HStack gap={2} mb={1} color="textMuted" fontSize="sm">
+        <Icon as={icon} />
+        <Text>{label}</Text>
+      </HStack>
+      <Text fontWeight="semibold">{value}</Text>
+    </Box>
+  );
+}
+
+function SummaryTile({ label, value, icon }: Readonly<InfoTileProps>) {
+  return (
+    <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={5}>
+      <HStack justify="space-between" mb={2} color="textMuted">
+        <Text fontSize="sm">{label}</Text>
+        <Icon as={icon} />
+      </HStack>
+      <Text fontWeight="semibold" fontSize="lg">
+        {value}
+      </Text>
+    </Box>
   );
 }

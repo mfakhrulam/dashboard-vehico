@@ -1,4 +1,4 @@
-import { Box, Container, Heading, Text, VStack, Input, Button, Alert } from '@chakra-ui/react';
+import { Container, Text, VStack, Input, Button, Alert } from '@chakra-ui/react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { useState } from 'react';
@@ -10,6 +10,8 @@ import { parseApiError, FormErrors } from '@/utils/error';
 import { vehicleService } from '@/services/vehicle.service';
 import { CreateVehicleRequest } from '@/types/vehicle.types';
 import { useMutation } from '@tanstack/react-query';
+import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/layout/PageHeader';
 
 const vehicleSchema = z.object({
   name: z.string().min(2, 'Nama kendaraan minimal 2 karakter'),
@@ -20,13 +22,20 @@ const vehicleSchema = z.object({
   currentOdometer: z.string().regex(/^\d+$/, 'Kilometer harus angka'),
 });
 
+const getZodMessage = (error: unknown, fallback: string) => {
+  if (error instanceof z.ZodError) {
+    return error.issues?.[0]?.message || fallback;
+  }
+  return fallback;
+};
+
 // Validator functions
 const validateName = (value: string) => {
   try {
     vehicleSchema.shape.name.parse(value);
     return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid name';
+  } catch (error: unknown) {
+    return getZodMessage(error, 'Invalid name');
   }
 };
 
@@ -34,8 +43,8 @@ const validateBrand = (value: string) => {
   try {
     vehicleSchema.shape.brand.parse(value);
     return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid brand';
+  } catch (error: unknown) {
+    return getZodMessage(error, 'Invalid brand');
   }
 };
 
@@ -43,8 +52,8 @@ const validateModel = (value: string) => {
   try {
     vehicleSchema.shape.model.parse(value);
     return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid model';
+  } catch (error: unknown) {
+    return getZodMessage(error, 'Invalid model');
   }
 };
 
@@ -52,8 +61,8 @@ const validateYear = (value: string) => {
   try {
     vehicleSchema.shape.year.parse(value);
     return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid year';
+  } catch (error: unknown) {
+    return getZodMessage(error, 'Invalid year');
   }
 };
 
@@ -61,8 +70,8 @@ const validateLicensePlate = (value: string) => {
   try {
     vehicleSchema.shape.licensePlate.parse(value);
     return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid license plate';
+  } catch (error: unknown) {
+    return getZodMessage(error, 'Invalid license plate');
   }
 };
 
@@ -70,8 +79,8 @@ const validateOdometer = (value: string) => {
   try {
     vehicleSchema.shape.currentOdometer.parse(value);
     return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid odometer';
+  } catch (error: unknown) {
+    return getZodMessage(error, 'Invalid odometer');
   }
 };
 
@@ -132,7 +141,7 @@ export default function VehicleCreate() {
         };
 
         createMutation.mutate(requestData);
-      } catch (error: any) {
+      } catch (error: unknown) {
         const { formErrors: newFormErrors } = parseApiError(error);
         setFormErrors(newFormErrors || {});
       }
@@ -140,14 +149,18 @@ export default function VehicleCreate() {
   });
 
   return (
-    <Box minH="100vh" bg="bg.subtle" py={8}>
-      <Container maxW="md">
-        <VStack gap={8} bg="bg" p={8} borderRadius="lg" borderWidth="1px">
-          <VStack gap={2}>
-            <Heading size="2xl">Tambah Kendaraan</Heading>
-            <Text color="fg.muted">Masukkan informasi kendaraan Anda</Text>
-          </VStack>
-
+    <Layout>
+      <Container maxW="2xl">
+        <PageHeader
+          title="Tambah Kendaraan"
+          description="Masukkan informasi kendaraan Anda"
+          breadcrumbs={[
+            { label: 'Dashboard', to: ROUTES.DASHBOARD },
+            { label: 'Garasi', to: ROUTES.GARAGE },
+            { label: 'Tambah Kendaraan' },
+          ]}
+        />
+        <VStack gap={8} bg="surface" p={{ base: 5, md: 6 }} borderRadius="xl" borderWidth="1px" borderColor="border">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -167,8 +180,8 @@ export default function VehicleCreate() {
                         {Object.entries(formErrors).map(([field, messages]) => (
                           <VStack key={field} align="start" gap={0.5} ps={2} borderLeftWidth="2px" borderLeftColor="red.500">
                             <Text fontSize="sm" fontWeight="medium">{field}</Text>
-                            {messages.map((msg, idx) => (
-                              <Text key={idx} fontSize="xs" color="red.700">• {msg}</Text>
+                            {messages.map((msg) => (
+                              <Text key={`${field}-${msg}`} fontSize="xs" color="red.700">• {msg}</Text>
                             ))}
                           </VStack>
                         ))}
@@ -403,6 +416,6 @@ export default function VehicleCreate() {
           </form>
         </VStack>
       </Container>
-    </Box>
+    </Layout>
   );
 }
