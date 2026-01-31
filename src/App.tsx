@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard';
 import Garage from '@/pages/Garage';
 import VehicleDetail from '@/pages/VehicleDetail';
 import VehicleCreate from '@/pages/VehicleCreate';
+import VehicleEdit from '@/pages/VehicleEdit';
 import Profile from '@/pages/Profile';
 import ServiceCreate from '@/pages/ServiceCreate';
 import ServiceEdit from '@/pages/ServiceEdit';
@@ -58,6 +59,14 @@ function App() {
           element={
             <ProtectedRoute>
               <VehicleDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.VEHICLE_EDIT(':id')}
+          element={
+            <ProtectedRoute>
+              <VehicleEdit />
             </ProtectedRoute>
           }
         />

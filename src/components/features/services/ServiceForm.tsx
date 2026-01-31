@@ -8,7 +8,9 @@ import {
   Text,
   Textarea,
   VStack,
-  NativeSelect,
+  Select,
+  Portal,
+  createListCollection,
 } from '@chakra-ui/react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
@@ -45,6 +47,10 @@ const serviceSchema = z.object({
   cost: z.string().optional(),
   workshopName: z.string().optional(),
   notes: z.string().optional(),
+});
+
+const serviceTypeOptions = createListCollection({
+  items: Object.entries(SERVICE_TYPES).map(([key, label]) => ({ label, value: key })),
 });
 
 const getZodMessage = (error: unknown, fallback: string) => {
@@ -262,20 +268,35 @@ export default function ServiceForm({
               invalid={!!field.state.meta.errors.length}
               errorText={field.state.meta.errors[0]}
             >
-              <NativeSelect.Root size="lg">
-                <NativeSelect.Field
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => field.handleChange(event.target.value as ServiceType)}
-                >
-                  {Object.entries(SERVICE_TYPES).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
+              <Select.Root 
+                size="lg"
+                collection={serviceTypeOptions}
+                value={[field.state.value]}
+                onValueChange={(e) => field.handleChange(e.value[0] as ServiceType)}
+                onInteractOutside={() => field.handleBlur()}
+              >
+                <Select.HiddenSelect />
+                <Select.Control>
+                  <Select.Trigger>
+                    <Select.ValueText />
+                  </Select.Trigger>
+                  <Select.IndicatorGroup>
+                    <Select.Indicator />
+                  </Select.IndicatorGroup>
+                </Select.Control>
+                <Portal>
+                  <Select.Positioner>
+                    <Select.Content>
+                      {serviceTypeOptions.items.map((option) => (
+                        <Select.Item item={option} key={option.value}>
+                          {option.label}
+                          <Select.ItemIndicator />
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Positioner>
+                </Portal>
+              </Select.Root>
             </Field>
           )}
         </form.Field>

@@ -8,7 +8,9 @@ import {
   VStack,
   HStack,
   Button,
-  NativeSelect,
+  Select,
+  Portal,
+  createListCollection,
 } from '@chakra-ui/react';
 import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
@@ -33,6 +35,13 @@ export default function ServiceCreate() {
     () => [...ownedVehicles, ...sharedVehicles],
     [ownedVehicles, sharedVehicles]
   );
+  
+  const vehicleOptions = useMemo(() => createListCollection({
+    items: vehicles.map(vehicle => ({
+      label: `${vehicle.name} - ${vehicle.licensePlate || vehicle.brand}`,
+      value: String(vehicle.id)
+    }))
+  }), [vehicles]);
   const paramVehicleId = Number.parseInt(searchParams.get('vehicleId') ?? '0', 10);
   const defaultVehicleId = vehicles[0]?.id ?? 0;
   const activeVehicleId = selectedVehicleId || paramVehicleId || defaultVehicleId;
@@ -121,21 +130,36 @@ export default function ServiceCreate() {
           >
             <VStack align="stretch" gap={4}>
               <FieldWrapper label="Pilih Kendaraan">
-                <NativeSelect.Root size="lg">
-                  <NativeSelect.Field
-                    value={activeVehicleId ? String(activeVehicleId) : ''}
-                    onChange={(event) =>
-                      setSelectedVehicleId(Number.parseInt(event.target.value, 10))
-                    }
-                  >
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.name} - {vehicle.licensePlate || vehicle.brand}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                <Select.Root 
+                  size="lg"
+                  collection={vehicleOptions}
+                  value={[String(activeVehicleId)]}
+                  onValueChange={(e) =>
+                    setSelectedVehicleId(Number.parseInt(e.value[0], 10))
+                  }
+                >
+                  <Select.HiddenSelect />
+                  <Select.Control>
+                    <Select.Trigger>
+                      <Select.ValueText />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                      <Select.Indicator />
+                    </Select.IndicatorGroup>
+                  </Select.Control>
+                  <Portal>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {vehicleOptions.items.map((option) => (
+                          <Select.Item item={option} key={option.value}>
+                            {option.label}
+                            <Select.ItemIndicator />
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Portal>
+                </Select.Root>
               </FieldWrapper>
             </VStack>
 

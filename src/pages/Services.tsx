@@ -11,7 +11,9 @@ import {
   SimpleGrid,
   Text,
   VStack,
-  NativeSelect,
+  Select,
+  Portal,
+  createListCollection,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router';
 import { useServices } from '@/hooks/useServices';
@@ -31,6 +33,13 @@ interface FilterState {
 
 const DEFAULT_LIMIT = 10;
 
+const serviceTypeOptions = createListCollection({
+  items: [
+    { label: "Semua", value: "all" },
+    ...Object.entries(SERVICE_TYPES).map(([key, label]) => ({ label, value: key })),
+  ],
+});
+
 export default function Services() {
   const navigate = useNavigate();
   const { ownedVehicles, sharedVehicles, isLoading: isLoadingVehicles } = useVehicles();
@@ -44,6 +53,13 @@ export default function Services() {
 
   const vehicles = useMemo(() => [...ownedVehicles, ...sharedVehicles], [ownedVehicles, sharedVehicles]);
   const activeVehicleId = selectedVehicleId || vehicles[0]?.id || 0;
+
+  const vehicleOptions = useMemo(() => createListCollection({
+    items: vehicles.map(vehicle => ({
+      label: `${vehicle.name} - ${vehicle.licensePlate || vehicle.brand}`,
+      value: String(vehicle.id)
+    }))
+  }), [vehicles]);
 
   const { services, pagination, isLoading } = useServices(activeVehicleId, page, DEFAULT_LIMIT);
 
@@ -81,41 +97,70 @@ export default function Services() {
           <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={5}>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4} alignItems="end">
               <FilterField label="Kendaraan">
-                <NativeSelect.Root size="lg">
-                  <NativeSelect.Field
-                    value={activeVehicleId ? String(activeVehicleId) : ''}
-                    onChange={(event) => {
-                      setSelectedVehicleId(Number.parseInt(event.target.value, 10));
-                      setPage(1);
-                    }}
-                  >
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.name} - {vehicle.licensePlate || vehicle.brand}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                <Select.Root 
+                  size="lg"
+                  collection={vehicleOptions}
+                  value={[String(activeVehicleId)]}
+                  onValueChange={(e) => {
+                    setSelectedVehicleId(Number.parseInt(e.value[0], 10));
+                    setPage(1);
+                  }}
+                >
+                  <Select.HiddenSelect />
+                  <Select.Control>
+                    <Select.Trigger>
+                      <Select.ValueText />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                      <Select.Indicator />
+                    </Select.IndicatorGroup>
+                  </Select.Control>
+                  <Portal>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {vehicleOptions.items.map((option) => (
+                          <Select.Item item={option} key={option.value}>
+                            {option.label}
+                            <Select.ItemIndicator />
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Portal>
+                </Select.Root>
               </FilterField>
 
               <FilterField label="Jenis Service">
-                <NativeSelect.Root size="lg">
-                  <NativeSelect.Field
-                    value={filters.serviceType}
-                    onChange={(event) =>
-                      setFilters((prev) => ({ ...prev, serviceType: event.target.value }))
-                    }
-                  >
-                    <option value="all">Semua</option>
-                    {Object.entries(SERVICE_TYPES).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                <Select.Root 
+                  size="lg"
+                  collection={serviceTypeOptions}
+                  value={[filters.serviceType]}
+                  onValueChange={(e) =>
+                    setFilters((prev) => ({ ...prev, serviceType: e.value[0] }))
+                  }
+                >
+                  <Select.HiddenSelect />
+                  <Select.Control>
+                    <Select.Trigger>
+                      <Select.ValueText />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                      <Select.Indicator />
+                    </Select.IndicatorGroup>
+                  </Select.Control>
+                  <Portal>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {serviceTypeOptions.items.map((option) => (
+                          <Select.Item item={option} key={option.value}>
+                            {option.label}
+                            <Select.ItemIndicator />
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Portal>
+                </Select.Root>
               </FilterField>
 
               <FilterField label="Tanggal Mulai">

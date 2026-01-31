@@ -15,15 +15,18 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react';
+import { Tooltip } from '@/components/ui/tooltip';
 import { Link as RouterLink, useNavigate } from 'react-router';
 import { FiActivity, FiBarChart2, FiBell, FiChevronDown, FiClock, FiDollarSign, FiPlus, FiTool, FiTruck } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicles } from '@/hooks/useVehicles';
-import { ROUTES } from '@/config/constants';
-import { formatCurrency, formatOdometer } from '@/utils/format';
+import { useRecentServices } from '@/hooks/useServices';
+import { ROUTES, SERVICE_TYPES } from '@/config/constants';
+import { formatCurrency, formatOdometer, formatDate } from '@/utils/format';
 import EmptyState from '@/components/common/EmptyState';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import VehicleCard from '@/components/features/vehicles/VehicleCard';
+import QuickServiceModal from '@/components/features/services/QuickServiceModal';
 import Layout from '@/components/layout/Layout';
 
 interface StatsCardProps {
@@ -79,6 +82,19 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { ownedVehicles, sharedVehicles, isLoading } = useVehicles();
   const [activeTab, setActiveTab] = useState<'owned' | 'shared'>('owned');
+  const [isQuickServiceOpen, setIsQuickServiceOpen] = useState(false);
+
+  const allVehicles = useMemo(
+    () => [...ownedVehicles, ...sharedVehicles],
+    [ownedVehicles, sharedVehicles]
+  );
+
+  const {
+    recentServices,
+    totalServicesThisMonth,
+    totalCostThisMonth,
+    isLoading: isLoadingServices,
+  } = useRecentServices(allVehicles, 5);
 
   const totalVehicles = ownedVehicles.length + sharedVehicles.length;
   const primaryVehicle = ownedVehicles[0] ?? sharedVehicles[0];
@@ -210,9 +226,9 @@ export default function Dashboard() {
 
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4}>
             <StatsCard title="Total Kendaraan" value={`${totalVehicles}`} helperText="Termasuk kendaraan dibagikan" icon={FiTruck} />
-            <StatsCard title="Total Service" value="0" helperText="Service bulan ini" icon={FiActivity} />
+            <StatsCard title="Total Service" value={`${totalServicesThisMonth}`} helperText="Service bulan ini" icon={FiActivity} />
             <StatsCard title="Service Mendatang" value="0" helperText="Dalam 30 hari" icon={FiClock} />
-            <StatsCard title="Total Biaya" value={formatCurrency(0)} helperText="Pengeluaran bulan ini" icon={FiDollarSign} />
+            <StatsCard title="Total Biaya" value={formatCurrency(totalCostThisMonth)} helperText="Pengeluaran bulan ini" icon={FiDollarSign} />
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, lg: 3 }} gap={6}>
@@ -347,34 +363,103 @@ export default function Dashboard() {
           <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={6}>
             <Flex justify="space-between" align={{ base: 'start', md: 'center' }} mb={4} direction={{ base: 'column', md: 'row' }} gap={2}>
               <Heading size="md">Service Terbaru</Heading>
-              {primaryVehicle && (
-                <Text fontSize="sm" color="textMuted">
-                  Kendaraan aktif: {primaryVehicle.name}
-                </Text>
-              )}
+              <RouterLink to={ROUTES.SERVICES}>
+                <Button variant="ghost" size="sm">
+                  Lihat Semua
+                </Button>
+              </RouterLink>
             </Flex>
             <Stack gap={4}>
-              <Box textAlign="center" py={8} borderWidth="1px" borderColor="border" borderRadius="lg" bg="bg">
-                <Text color="textMuted" mb={4}>
-                  Belum ada service terbaru.
-                </Text>
-                <RouterLink
-                  to={
-                    primaryVehicle
-                      ? `${ROUTES.SERVICE_NEW}?vehicleId=${primaryVehicle.id}`
-                      : ROUTES.SERVICE_NEW
-                  }
-                >
-                  <Button colorPalette="brand">Catat Service</Button>
-                </RouterLink>
-              </Box>
-              <Text fontSize="xs" color="textMuted">
-                TODO: Tampilkan 5 service terakhir dari semua kendaraan.
-              </Text>
+              {isLoadingServices && <LoadingSpinner label="Memuat service terbaru..." />}
+              
+              {!isLoadingServices && recentServices.length === 0 && (
+                <Box textAlign="center" py={8} borderWidth="1px" borderColor="border" borderRadius="lg" bg="bg">
+                  <Text color="textMuted" mb={4}>
+                    Belum ada service terbaru.
+                  </Text>
+                  <RouterLink
+                    to={
+                      primaryVehicle
+                        ? `${ROUTES.SERVICE_NEW}?vehicleId=${primaryVehicle.id}`
+                        : ROUTES.SERVICE_NEW
+                    }
+                  >
+                    <Button colorPalette="brand">Catat Service</Button>
+                  </RouterLink>
+                </Box>
+              )}
+
+              {!isLoadingServices && recentServices.length > 0 && (
+                <VStack gap={3} align="stretch">
+                  {recentServices.map((service) => (
+                    <HStack
+                      key={service.id}
+                      p={4}
+                      bg="bg"
+                      borderRadius="lg"
+                      justify="space-between"
+                      borderWidth="1px"
+                      borderColor="border"
+                    >
+                      <HStack gap={3}>
+                        <Box
+                          bg="brand.subtle"
+                          borderRadius="lg"
+                          p={2}
+                          color="brand.fg"
+                        >
+                          <Icon as={FiTool} boxSize={5} />
+                        </Box>
+                        <Box>
+                          <Text fontWeight="medium">
+                            {SERVICE_TYPES[service.serviceType as keyof typeof SERVICE_TYPES] || service.serviceType}
+                          </Text>
+                          <Text fontSize="sm" color="textMuted">
+                            {service.vehicleName} • {formatDate(service.serviceDate)}
+                          </Text>
+                        </Box>
+                      </HStack>
+                      <Box textAlign="right">
+                        <Text fontWeight="semibold">
+                          {service.cost ? formatCurrency(service.cost) : '-'}
+                        </Text>
+                        <Text fontSize="sm" color="textMuted">
+                          {formatOdometer(service.odometer)}
+                        </Text>
+                      </Box>
+                    </HStack>
+                  ))}
+                </VStack>
+              )}
             </Stack>
           </Box>
         </VStack>
       </Container>
+
+      {/* Floating Action Button for Quick Service */}
+      <Tooltip content="Tambah Service Cepat" positioning={{ placement: 'left' }}>
+        <IconButton
+          aria-label="Tambah Service Cepat"
+          colorPalette="brand"
+          size="2xl"
+          borderRadius="full"
+          boxShadow="lg"
+          position="fixed"
+          bottom={6}
+          right={6}
+          zIndex="docked"
+          onClick={() => setIsQuickServiceOpen(true)}
+          _hover={{ transform: 'scale(1.1)', boxShadow: 'xl' }}
+          transition="all 0.2s"
+        >
+          <FiPlus size={24} />
+        </IconButton>
+      </Tooltip>
+
+      <QuickServiceModal
+        isOpen={isQuickServiceOpen}
+        onClose={() => setIsQuickServiceOpen(false)}
+      />
     </Layout>
   );
 }

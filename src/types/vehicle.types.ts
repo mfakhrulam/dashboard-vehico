@@ -57,15 +57,15 @@ export interface VehicleListResponse {
   shared: VehicleResponse[];
 }
 
-export interface VehicleShareResponse {
+export interface VehicleShareInfo {
   id: number;
   vehicleId: number;
-  sharedWith: {
+  user: {
     id: number;
     name: string;
     email: string;
   };
   permission: 'view' | 'edit';
   sharedAt: Date;
-  revokedAt: Date | null;
+  revokedAt?: Date | null;
 }

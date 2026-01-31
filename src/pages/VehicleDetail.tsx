@@ -1,4 +1,5 @@
 import { Box, Button, Container, Flex, Heading, HStack, Icon, SimpleGrid, Stack, Text, VStack } from '@chakra-ui/react';
+import { useState } from 'react';
 import type { ElementType } from 'react';
 import { Link as RouterLink, useParams } from 'react-router';
 import { FiActivity, FiCalendar, FiDollarSign, FiEdit2, FiShare2, FiTool, FiUser } from 'react-icons/fi';
@@ -8,10 +9,12 @@ import { ROUTES, PERMISSION_LEVELS, SERVICE_TYPES } from '@/config/constants';
 import { formatOdometer, formatDate, formatCurrency } from '@/utils/format';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
+import ShareVehicleModal from '@/components/features/vehicles/ShareVehicleModal';
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
   const vehicleId = Number.parseInt(id || '0', 10);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const { vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId);
   const { services, isLoading: isLoadingServices } = useServices(vehicleId);
@@ -114,14 +117,12 @@ export default function VehicleDetail() {
                         </RouterLink>
                       )}
                       {isOwner && (
-                        <RouterLink to={ROUTES.VEHICLE_SHARE(vehicle.id)}>
-                          <Button variant="outline" h="48px">
-                            <HStack as="span" gap={2}>
-                              <Icon as={FiShare2} />
-                              <Text>Kelola Berbagi</Text>
-                            </HStack>
-                          </Button>
-                        </RouterLink>
+                        <Button variant="outline" h="48px" onClick={() => setIsShareModalOpen(true)}>
+                          <HStack as="span" gap={2}>
+                            <Icon as={FiShare2} />
+                            <Text>Kelola Berbagi</Text>
+                          </HStack>
+                        </Button>
                       )}
                     </HStack>
                   </Stack>
@@ -253,6 +254,14 @@ export default function VehicleDetail() {
           )}
         </VStack>
       </Container>
+
+      {vehicle && (
+        <ShareVehicleModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          vehicleId={vehicleId}
+        />
+      )}
     </Layout>
   );
 }

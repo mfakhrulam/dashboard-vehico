@@ -6,7 +6,7 @@ import {
   UpdateVehicleRequest,
   ShareVehicleRequest,
   UpdateSharePermissionRequest,
-  VehicleShareResponse,
+  VehicleShareInfo,
 } from '@/types/vehicle.types';
 import { ApiResponse } from '@/types/common.types';
 
@@ -65,7 +65,7 @@ export const vehicleService = {
 
   // Share vehicle
   share: async (id: number, data: ShareVehicleRequest) => {
-    const response = await api.post<ApiResponse<VehicleShareResponse>>(
+    const response = await api.post<ApiResponse<VehicleShareInfo>>(
       `/vehicles/${id}/share`,
       data
     );
@@ -74,7 +74,7 @@ export const vehicleService = {
 
   // Get vehicle shares
   getShares: async (id: number) => {
-    const response = await api.get<ApiResponse<VehicleShareResponse[]>>(`/vehicles/${id}/shares`);
+    const response = await api.get<ApiResponse<VehicleShareInfo[]>>(`/vehicles/${id}/shares`);
     return response.data;
   },
 
@@ -84,7 +84,7 @@ export const vehicleService = {
     shareId: number,
     data: UpdateSharePermissionRequest
   ) => {
-    const response = await api.put<ApiResponse<VehicleShareResponse>>(
+    const response = await api.put<ApiResponse<VehicleShareInfo>>(
       `/vehicles/${vehicleId}/shares/${shareId}`,
       data
     );
