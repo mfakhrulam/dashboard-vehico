@@ -48,7 +48,12 @@ const customConfig = defineConfig({
           focusRing: { value: { base: '{colors.brand.500}', _dark: '{colors.brand.400}' } },
         },
         bg: {
-          value: { base: '{colors.stone.50}', _dark: '{colors.stone.900}' },
+          DEFAULT: { value: { base: '{colors.stone.50}', _dark: '{colors.stone.900}' } },
+          canvas: { value: { base: '{colors.stone.50}', _dark: '{colors.stone.900}' } },
+          panel: { value: { base: 'white', _dark: '{colors.stone.800}' } },
+          subtle: { value: { base: '{colors.stone.100}', _dark: '{colors.stone.800}' } },
+          muted: { value: { base: '{colors.stone.200}', _dark: '{colors.stone.700}' } },
+          emphasized: { value: { base: '{colors.stone.300}', _dark: '{colors.stone.600}' } },
         },
         surface: {
           value: { base: 'white', _dark: '{colors.stone.800}' },
