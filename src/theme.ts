@@ -70,6 +70,28 @@ const customConfig = defineConfig({
         },
       },
     },
+    recipes: {
+      button: {
+        variants: {
+          variant: {
+            outline: {
+              color: 'text',
+              borderColor: 'border',
+              _hover: {
+                bg: 'bg',
+                borderColor: 'border',
+              },
+            },
+            ghost: {
+              color: 'text',
+              _hover: {
+                bg: 'bg',
+              },
+            },
+          },
+        },
+      },
+    },
   },
   globalCss: {
     body: {

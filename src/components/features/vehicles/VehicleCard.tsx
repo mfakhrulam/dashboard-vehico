@@ -19,7 +19,7 @@ export default function VehicleCard({ vehicle }: Readonly<VehicleCardProps>) {
         borderRadius="xl"
         borderWidth="1px"
         borderColor="border"
-        _hover={{ borderColor: 'brand.solid', transform: 'translateY(-2px)' }}
+        _hover={{ borderColor: 'textMuted', transform: 'translateY(-2px)' }}
         transition="all 0.2s"
         position="relative"
         cursor="pointer"
