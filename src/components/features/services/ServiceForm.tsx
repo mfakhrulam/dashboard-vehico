@@ -11,14 +11,20 @@ import {
   Select,
   Portal,
   createListCollection,
+  Combobox,
+  useFilter,
+  useListCollection,
 } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { SERVICE_TYPES } from '@/config/constants';
 import { Field } from '@/components/ui/field';
+import { partsService } from '@/services/parts.service';
 import type { FormErrors } from '@/utils/error';
 import type { PartReplaced, CreateServiceRequest } from '@/types/service.types';
 import type { ServiceType } from '@/types/common.types';
+import type { PartResponse } from '@/types/parts.types';
 
 interface ServiceFormValues {
   serviceDate: string;
@@ -81,12 +87,29 @@ export default function ServiceForm({
   const [partQuantity, setPartQuantity] = useState('1');
   const [receiptPhoto, setReceiptPhoto] = useState<File | undefined>(undefined);
 
+  // Fetch parts catalog (returns flat array of all parts)
+  const { data: partsCatalog = [] } = useQuery({
+    queryKey: ['parts-catalog'],
+    queryFn: () => partsService.getAllFlat(),
+  });
+
+  // Setup combobox filter
+  const { contains } = useFilter({ sensitivity: 'base' });
+  const partsItems = useMemo(() => 
+    partsCatalog.map((p: PartResponse) => ({ label: p.partName, value: p.partName })),
+    [partsCatalog]
+  );
+  const { collection: partsCollection, filter: filterParts } = useListCollection({
+    initialItems: partsItems,
+    filter: contains,
+  });
+
   const defaultServiceDate = useMemo(() => {
     if (initialValues?.serviceDate) {
       return initialValues.serviceDate;
     }
     return new Date().toISOString().slice(0, 10);
-  }, [initialValues?.serviceDate]);
+  }, [initialValues]);
 
   const form = useForm({
     defaultValues: {
@@ -306,18 +329,53 @@ export default function ServiceForm({
             Part yang Diganti
           </Text>
           <Stack gap={3}>
-            <HStack gap={3} flexWrap="wrap">
-              <Input
-                value={partName}
-                onChange={(event) => setPartName(event.target.value)}
-                placeholder="Nama part"
-                size="md"
-              />
+            <HStack gap={3} flexWrap="wrap" align="flex-end">
+              <Box flex="1" minW="200px">
+                <Combobox.Root
+                  collection={partsCollection}
+                  onInputValueChange={(e) => {
+                    setPartName(e.inputValue);
+                    filterParts(e.inputValue);
+                  }}
+                  onValueChange={(e) => {
+                    if (e.value[0]) {
+                      setPartName(e.value[0]);
+                    }
+                  }}
+                  inputValue={partName}
+                  allowCustomValue
+                  selectionBehavior="replace"
+                  openOnClick
+                >
+                  <Combobox.Label fontSize="sm" color="textMuted">Nama Part</Combobox.Label>
+                  <Combobox.Control>
+                    <Combobox.Input placeholder="Cari atau ketik nama part" />
+                    <Combobox.IndicatorGroup>
+                      <Combobox.ClearTrigger />
+                      <Combobox.Trigger />
+                    </Combobox.IndicatorGroup>
+                  </Combobox.Control>
+                  <Portal>
+                    <Combobox.Positioner>
+                      <Combobox.Content>
+                        <Combobox.Empty>Tidak ditemukan - ketik untuk menambah</Combobox.Empty>
+                        {partsCollection.items.map((item) => (
+                          <Combobox.Item item={item} key={item.value}>
+                            {item.label}
+                            <Combobox.ItemIndicator />
+                          </Combobox.Item>
+                        ))}
+                      </Combobox.Content>
+                    </Combobox.Positioner>
+                  </Portal>
+                </Combobox.Root>
+              </Box>
               <Input
                 value={partBrand}
                 onChange={(event) => setPartBrand(event.target.value)}
                 placeholder="Brand"
                 size="md"
+                maxW="150px"
               />
               <Input
                 value={partQuantity}
@@ -325,10 +383,10 @@ export default function ServiceForm({
                 placeholder="Qty"
                 type="number"
                 size="md"
-                maxW="120px"
+                maxW="80px"
               />
-              <Button onClick={addPart} variant="outline" size="md">
-                Tambah Part
+              <Button onClick={addPart} variant="outline" size="md" disabled={!partName.trim()}>
+                Tambah
               </Button>
             </HStack>
 

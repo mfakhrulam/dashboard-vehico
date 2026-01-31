@@ -69,3 +69,27 @@ export interface VehicleShareInfo {
   sharedAt: Date;
   revokedAt?: Date | null;
 }
+
+// Maintenance Schedule Types
+export interface MaintenanceItem {
+  partName: string;
+  category: string;
+  vehicleType: string;
+  recommendedIntervalKm: number | null;
+  recommendedIntervalMonths: number | null;
+  lastServiceDate: Date | null;
+  lastServiceOdometer: number | null;
+  nextDueKm: number | null;
+  nextDueDate: Date | null;
+  currentOdometer: number;
+  kmProgress: number | null;
+  monthProgress: number | null;
+  status: 'ok' | 'warning' | 'overdue' | 'unknown';
+}
+
+export interface MaintenanceScheduleResponse {
+  vehicleId: number;
+  vehicleName: string;
+  currentOdometer: number;
+  items: MaintenanceItem[];
+}

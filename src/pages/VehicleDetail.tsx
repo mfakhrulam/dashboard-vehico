@@ -1,15 +1,17 @@
-import { Box, Button, Container, Flex, Heading, HStack, Icon, SimpleGrid, Stack, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, Heading, HStack, Icon, SimpleGrid, Stack, Text, VStack, Tabs } from '@chakra-ui/react';
 import { useState } from 'react';
 import type { ElementType } from 'react';
 import { Link as RouterLink, useParams } from 'react-router';
-import { FiActivity, FiCalendar, FiDollarSign, FiEdit2, FiShare2, FiTool, FiUser } from 'react-icons/fi';
+import { FiActivity, FiCalendar, FiDollarSign, FiEdit2, FiShare2, FiTool, FiUser, FiClock, FiList } from 'react-icons/fi';
 import { useVehicle } from '@/hooks/useVehicles';
 import { useServices } from '@/hooks/useServices';
-import { ROUTES, PERMISSION_LEVELS, SERVICE_TYPES } from '@/config/constants';
+import { ROUTES, PERMISSION_LEVELS } from '@/config/constants';
 import { formatOdometer, formatDate, formatCurrency } from '@/utils/format';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
 import ShareVehicleModal from '@/components/features/vehicles/ShareVehicleModal';
+import ServiceTimeline from '@/components/features/services/ServiceTimeline';
+import MaintenanceSchedule from '@/components/features/vehicles/MaintenanceSchedule';
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -135,121 +137,45 @@ export default function VehicleDetail() {
                 <SummaryTile label="Biaya Terakhir" value={latestService?.cost ? formatCurrency(latestService.cost) : '-'} icon={FiDollarSign} />
               </SimpleGrid>
 
-              <VStack align="stretch" gap={4}>
-                <Flex justify="space-between" align={{ base: 'start', md: 'center' }} gap={3} direction={{ base: 'column', md: 'row' }}>
-                  <Heading size="lg">Riwayat Service</Heading>
-                  <Text fontSize="sm" color="textMuted">
-                    Total catatan: {services.length}
-                  </Text>
-                </Flex>
+              {/* Tabs for Service History and Maintenance Schedule */}
+              <Tabs.Root defaultValue="history" variant="line">
+                <Tabs.List>
+                  <Tabs.Trigger value="history">
+                    <HStack gap={2}>
+                      <Icon as={FiList} />
+                      <Text>Riwayat Service</Text>
+                    </HStack>
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="maintenance">
+                    <HStack gap={2}>
+                      <Icon as={FiClock} />
+                      <Text>Jadwal Perawatan</Text>
+                    </HStack>
+                  </Tabs.Trigger>
+                </Tabs.List>
 
-                {isLoadingServices && <Text>Loading...</Text>}
-
-                {!isLoadingServices && services.length === 0 && (
-                  <Box textAlign="center" py={8} bg="bg" borderRadius="lg" borderWidth="1px" borderColor="border">
-                    <Text color="textMuted">Belum ada riwayat service</Text>
-                  </Box>
-                )}
-
-                {services.map((service) => (
-                  <Box key={service.id} bg="surface" p={6} borderRadius="xl" borderWidth="1px" borderColor="border">
-                    <Flex justify="space-between" align="start" mb={3} gap={4} flexWrap="wrap">
-                      <VStack align="start" gap={2}>
-                        <Box
-                          px={3}
-                          py={1}
-                          borderRadius="full"
-                          bg="bg"
-                          borderWidth="1px"
-                          borderColor="border"
-                          fontSize="sm"
-                          fontWeight="semibold"
-                        >
-                          {SERVICE_TYPES[service.serviceType]}
-                        </Box>
-                        <HStack gap={2} color="textMuted" fontSize="sm">
-                          <Icon as={FiCalendar} />
-                          <Text>{formatDate(service.serviceDate)}</Text>
-                        </HStack>
-                      </VStack>
-                      <VStack align="end" gap={2}>
-                        <Text fontWeight="semibold">{formatOdometer(service.odometer)}</Text>
-                        {canEdit && (
-                          <HStack gap={2}>
-                            <RouterLink to={ROUTES.SERVICE_EDIT(service.id)}>
-                              <Button size="sm" variant="outline" h="36px">
-                                Edit
-                              </Button>
-                            </RouterLink>
-                            <Button size="sm" variant="ghost" h="36px" disabled>
-                              Hapus
-                            </Button>
-                          </HStack>
-                        )}
-                      </VStack>
+                <Tabs.Content value="history">
+                  <VStack align="stretch" gap={4} pt={4}>
+                    <Flex justify="space-between" align={{ base: 'start', md: 'center' }} gap={3} direction={{ base: 'column', md: 'row' }}>
+                      <Text fontSize="sm" color="textMuted">
+                        Total catatan: {services.length}
+                      </Text>
                     </Flex>
 
-                    {service.partsReplaced && service.partsReplaced.length > 0 && (
-                      <Box mb={3}>
-                        <Text fontWeight="semibold" fontSize="sm" mb={1}>
-                          Part yang diganti
-                        </Text>
-                        <VStack align="start" gap={1}>
-                          {service.partsReplaced.map((part) => (
-                            <Text key={`${part.name}-${part.brand ?? 'na'}-${part.quantity ?? 1}`} fontSize="sm" color="textMuted">
-                              • {part.name}
-                              {part.brand && ` (${part.brand})`}
-                              {part.quantity && ` x${part.quantity}`}
-                            </Text>
-                          ))}
-                        </VStack>
-                      </Box>
+                    {isLoadingServices && <Text>Loading...</Text>}
+
+                    {!isLoadingServices && (
+                      <ServiceTimeline services={services} canEdit={canEdit} />
                     )}
+                  </VStack>
+                </Tabs.Content>
 
-                    <SimpleGrid columns={{ base: 1, md: 2 }} gap={2}>
-                      {service.cost !== null && (
-                        <Text fontSize="sm">
-                          <Text as="span" fontWeight="semibold">
-                            Biaya:
-                          </Text>{' '}
-                          {formatCurrency(service.cost)}
-                        </Text>
-                      )}
-
-                      {service.workshopName && (
-                        <Text fontSize="sm">
-                          <Text as="span" fontWeight="semibold">
-                            Bengkel:
-                          </Text>{' '}
-                          {service.workshopName}
-                        </Text>
-                      )}
-                    </SimpleGrid>
-
-                    {service.notes && (
-                      <Text fontSize="sm" mt={2} color="textMuted">
-                        {service.notes}
-                      </Text>
-                    )}
-
-                    {service.receiptPhotoUrl && (
-                      <Box
-                        mt={3}
-                        h="170px"
-                        borderRadius="md"
-                        backgroundImage={`url(${service.receiptPhotoUrl})`}
-                        backgroundSize="cover"
-                        backgroundPosition="center"
-                      />
-                    )}
-
-                    <HStack mt={3} gap={2} fontSize="xs" color="textMuted">
-                      <Icon as={FiUser} />
-                      <Text>Oleh: {service.performedBy.name}</Text>
-                    </HStack>
+                <Tabs.Content value="maintenance">
+                  <Box pt={4}>
+                    <MaintenanceSchedule vehicleId={vehicleId} />
                   </Box>
-                ))}
-              </VStack>
+                </Tabs.Content>
+              </Tabs.Root>
             </>
           )}
         </VStack>

@@ -7,6 +7,7 @@ import {
   ShareVehicleRequest,
   UpdateSharePermissionRequest,
   VehicleShareInfo,
+  MaintenanceScheduleResponse,
 } from '@/types/vehicle.types';
 import { ApiResponse } from '@/types/common.types';
 
@@ -94,6 +95,14 @@ export const vehicleService = {
   // Revoke share
   revokeShare: async (vehicleId: number, shareId: number) => {
     const response = await api.delete<ApiResponse>(`/vehicles/${vehicleId}/shares/${shareId}`);
+    return response.data;
+  },
+
+  // Get maintenance schedule
+  getMaintenanceSchedule: async (vehicleId: number) => {
+    const response = await api.get<ApiResponse<MaintenanceScheduleResponse>>(
+      `/vehicles/${vehicleId}/maintenance`
+    );
     return response.data;
   },
 };

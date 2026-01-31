@@ -1,14 +1,30 @@
 import api from './api';
-import { PartResponse, CreatePartRequest, UpdatePartRequest } from '@/types/parts.types';
+import { PartResponse, PartsListResponse, CreatePartRequest, UpdatePartRequest } from '@/types/parts.types';
 import { ApiResponse } from '@/types/common.types';
 
 export const partsService = {
-  // Get all parts
-  getAll: async (vehicleType?: 'motor' | 'mobil') => {
+  // Get all parts filtered by vehicle type (returns array)
+  getByType: async (vehicleType: 'motor' | 'mobil') => {
     const response = await api.get<ApiResponse<PartResponse[]>>('/parts', {
-      params: vehicleType ? { type: vehicleType } : undefined,
+      params: { type: vehicleType },
     });
     return response.data;
+  },
+
+  // Get all parts grouped by vehicle type (returns { motor: [], mobil: [] })
+  getAll: async () => {
+    const response = await api.get<ApiResponse<PartsListResponse>>('/parts');
+    return response.data;
+  },
+
+  // Get flat array of all parts (combines motor + mobil)
+  getAllFlat: async () => {
+    const response = await api.get<ApiResponse<PartsListResponse>>('/parts');
+    const data = response.data.data;
+    if (data) {
+      return [...data.motor, ...data.mobil];
+    }
+    return [];
   },
 
   // Get part by ID

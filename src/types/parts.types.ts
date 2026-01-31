@@ -1,29 +1,32 @@
-// Parts catalog types
+// Parts catalog types - matches backend PartsCatalogResponse
 export interface PartResponse {
   id: number;
-  name: string;
-  category: string;
-  vehicleType: 'motor' | 'mobil';
-  intervalKm: number | null;
-  intervalMonths: number | null;
+  vehicleType: string;
+  partName: string;
+  recommendedIntervalKm: number | null;
+  recommendedIntervalMonths: number | null;
   description: string | null;
-  createdAt: Date;
+  createdAt: Date | null;
+}
+
+// Grouped response when no type filter is provided
+export interface PartsListResponse {
+  motor: PartResponse[];
+  mobil: PartResponse[];
 }
 
 export interface CreatePartRequest {
-  name: string;
-  category: string;
   vehicleType: 'motor' | 'mobil';
-  intervalKm?: number;
-  intervalMonths?: number;
+  partName: string;
+  recommendedIntervalKm?: number;
+  recommendedIntervalMonths?: number;
   description?: string;
 }
 
 export interface UpdatePartRequest {
-  name?: string;
-  category?: string;
   vehicleType?: 'motor' | 'mobil';
-  intervalKm?: number;
-  intervalMonths?: number;
+  partName?: string;
+  recommendedIntervalKm?: number;
+  recommendedIntervalMonths?: number;
   description?: string;
 }
