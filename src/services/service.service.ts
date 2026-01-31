@@ -7,6 +7,15 @@ import {
 import { ApiResponse, PaginatedResponse } from '@/types/common.types';
 
 export const serviceService = {
+  // Get all service records across all vehicles (owned + shared)
+  getAll: async (page = 1, limit = 20) => {
+    const response = await api.get<PaginatedResponse<ServiceRecordResponse>>(
+      '/services',
+      { params: { page, limit } }
+    );
+    return response.data;
+  },
+
   // Get service records for a vehicle
   getByVehicle: async (vehicleId: number, page = 1, limit = 20) => {
     const response = await api.get<PaginatedResponse<ServiceRecordResponse>>(

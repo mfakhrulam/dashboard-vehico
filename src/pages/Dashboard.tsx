@@ -258,51 +258,6 @@ export default function Dashboard() {
               </VStack>
             </Box>
 
-            <Box
-              bg="surface"
-              borderWidth="1px"
-              borderColor="border"
-              borderRadius="xl"
-              p={5}
-              gridColumn={{ base: 'auto', lg: 'span 2' }}
-            >
-              <Flex justify="space-between" align="center" mb={4}>
-                <Heading size="md">Aksi Cepat</Heading>
-                <Text fontSize="sm" color="textMuted">
-                  Geser untuk melihat semua
-                </Text>
-              </Flex>
-              <HStack gap={4} overflowX="auto" pb={2} align="stretch">
-                <RouterLink to={ROUTES.VEHICLE_CREATE}>
-                  <Button size="lg" minW="200px" h="56px" colorPalette="brand">
-                    <HStack as="span" gap={2}>
-                      <Icon as={FiPlus} />
-                      <Text>Tambah Kendaraan</Text>
-                    </HStack>
-                  </Button>
-                </RouterLink>
-                <RouterLink
-                  to={
-                    primaryVehicle
-                      ? `${ROUTES.SERVICE_NEW}?vehicleId=${primaryVehicle.id}`
-                      : ROUTES.SERVICE_NEW
-                  }
-                >
-                  <Button size="lg" minW="200px" h="56px" variant="outline">
-                    <HStack as="span" gap={2}>
-                      <Icon as={FiTool} />
-                      <Text>Catat Service Cepat</Text>
-                    </HStack>
-                  </Button>
-                </RouterLink>
-                <Button size="lg" minW="200px" h="56px" variant="outline" disabled>
-                  <HStack as="span" gap={2}>
-                    <Icon as={FiBarChart2} />
-                    <Text>Statistik (Segera)</Text>
-                  </HStack>
-                </Button>
-              </HStack>
-            </Box>
           </SimpleGrid>
 
           <Box>

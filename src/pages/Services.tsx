@@ -16,7 +16,7 @@ import {
   createListCollection,
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router';
-import { useServices } from '@/hooks/useServices';
+import { useServices, useAllServices } from '@/hooks/useServices';
 import { useVehicles } from '@/hooks/useVehicles';
 import { ROUTES, SERVICE_TYPES } from '@/config/constants';
 import { formatCurrency, formatDate, formatOdometer } from '@/utils/format';
@@ -24,6 +24,7 @@ import EmptyState from '@/components/common/EmptyState';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
+import type { VehicleResponse } from '@/types/vehicle.types';
 
 interface FilterState {
   serviceType: string;
@@ -35,7 +36,7 @@ const DEFAULT_LIMIT = 10;
 
 const serviceTypeOptions = createListCollection({
   items: [
-    { label: "Semua", value: "all" },
+    { label: 'Semua', value: 'all' },
     ...Object.entries(SERVICE_TYPES).map(([key, label]) => ({ label, value: key })),
   ],
 });
@@ -43,7 +44,58 @@ const serviceTypeOptions = createListCollection({
 export default function Services() {
   const navigate = useNavigate();
   const { ownedVehicles, sharedVehicles, isLoading: isLoadingVehicles } = useVehicles();
-  const [selectedVehicleId, setSelectedVehicleId] = useState<number>(0);
+
+  const vehicles = useMemo(
+    () => [...ownedVehicles, ...sharedVehicles],
+    [ownedVehicles, sharedVehicles]
+  );
+
+  // Show loading while vehicles are being fetched
+  if (isLoadingVehicles) {
+    return (
+      <Layout>
+        <Container maxW="7xl">
+          <PageHeader
+            title="Service"
+            description="Kelola semua catatan service kendaraan Anda."
+          />
+          <LoadingSpinner label="Memuat data kendaraan..." />
+        </Container>
+      </Layout>
+    );
+  }
+
+  // Show empty state if no vehicles
+  if (vehicles.length === 0) {
+    return (
+      <Layout>
+        <Container maxW="7xl">
+          <PageHeader
+            title="Service"
+            description="Kelola semua catatan service kendaraan Anda."
+          />
+          <EmptyState
+            title="Belum ada kendaraan"
+            description="Tambahkan kendaraan untuk mulai mencatat service."
+            actionLabel="Tambah Kendaraan"
+            onAction={() => navigate(ROUTES.VEHICLE_CREATE)}
+          />
+        </Container>
+      </Layout>
+    );
+  }
+
+  // Render service list only when vehicles are available
+  return <ServiceList vehicles={vehicles} />;
+}
+
+interface ServiceListProps {
+  vehicles: VehicleResponse[];
+}
+
+function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
+  const navigate = useNavigate();
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<FilterState>({
     serviceType: 'all',
@@ -51,17 +103,28 @@ export default function Services() {
     endDate: '',
   });
 
-  const vehicles = useMemo(() => [...ownedVehicles, ...sharedVehicles], [ownedVehicles, sharedVehicles]);
-  const activeVehicleId = selectedVehicleId || vehicles[0]?.id || 0;
+  const vehicleOptions = useMemo(
+    () =>
+      createListCollection({
+        items: [
+          { label: 'Semua Kendaraan', value: 'all' },
+          ...vehicles.map((vehicle) => ({
+            label: `${vehicle.name} - ${vehicle.licensePlate || vehicle.brand}`,
+            value: String(vehicle.id),
+          })),
+        ],
+      }),
+    [vehicles]
+  );
 
-  const vehicleOptions = useMemo(() => createListCollection({
-    items: vehicles.map(vehicle => ({
-      label: `${vehicle.name} - ${vehicle.licensePlate || vehicle.brand}`,
-      value: String(vehicle.id)
-    }))
-  }), [vehicles]);
+  const isAllVehicles = selectedVehicleId === 'all';
+  const numericVehicleId = isAllVehicles ? 0 : Number.parseInt(selectedVehicleId, 10);
 
-  const { services, pagination, isLoading } = useServices(activeVehicleId, page, DEFAULT_LIMIT);
+  // Use different hooks based on selection
+  const singleVehicleQuery = useServices(numericVehicleId, page, DEFAULT_LIMIT);
+  const allVehiclesQuery = useAllServices(page, DEFAULT_LIMIT);
+
+  const { services, pagination, isLoading } = isAllVehicles ? allVehiclesQuery : singleVehicleQuery;
 
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
@@ -70,12 +133,12 @@ export default function Services() {
       }
 
       const serviceDate = new Date(service.serviceDate);
-      if (filters.startDate && serviceDate < new Date(filters.startDate)) {
-        return false;
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        if (serviceDate > end) return false;
       }
-      if (filters.endDate && serviceDate > new Date(filters.endDate)) {
-        return false;
-      }
+
       return true;
     });
   }, [services, filters]);
@@ -97,12 +160,12 @@ export default function Services() {
           <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={5}>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4} alignItems="end">
               <FilterField label="Kendaraan">
-                <Select.Root 
+                <Select.Root
                   size="lg"
                   collection={vehicleOptions}
-                  value={[String(activeVehicleId)]}
+                  value={[selectedVehicleId]}
                   onValueChange={(e) => {
-                    setSelectedVehicleId(Number.parseInt(e.value[0], 10));
+                    setSelectedVehicleId(e.value[0]);
                     setPage(1);
                   }}
                 >
@@ -131,7 +194,7 @@ export default function Services() {
               </FilterField>
 
               <FilterField label="Jenis Service">
-                <Select.Root 
+                <Select.Root
                   size="lg"
                   collection={serviceTypeOptions}
                   value={[filters.serviceType]}
@@ -168,7 +231,9 @@ export default function Services() {
                   type="date"
                   size="lg"
                   value={filters.startDate}
-                  onChange={(event) => setFilters((prev) => ({ ...prev, startDate: event.target.value }))}
+                  onChange={(event) =>
+                    setFilters((prev) => ({ ...prev, startDate: event.target.value }))
+                  }
                 />
               </FilterField>
 
@@ -177,40 +242,45 @@ export default function Services() {
                   type="date"
                   size="lg"
                   value={filters.endDate}
-                  onChange={(event) => setFilters((prev) => ({ ...prev, endDate: event.target.value }))}
+                  onChange={(event) =>
+                    setFilters((prev) => ({ ...prev, endDate: event.target.value }))
+                  }
                 />
               </FilterField>
             </SimpleGrid>
           </Box>
 
-          {(isLoadingVehicles || isLoading) && <LoadingSpinner label="Memuat data service..." />}
+          {isLoading && <LoadingSpinner label="Memuat data service..." />}
 
-          {!isLoadingVehicles && vehicles.length === 0 && (
-            <EmptyState
-              title="Belum ada kendaraan"
-              description="Tambahkan kendaraan untuk mulai mencatat service."
-              actionLabel="Tambah Kendaraan"
-              onAction={() => navigate(ROUTES.VEHICLE_CREATE)}
-            />
-          )}
-
-          {!isLoadingVehicles && vehicles.length > 0 && filteredServices.length === 0 && !isLoading && (
-            <EmptyState
-              title="Belum ada service"
-              description="Catat service pertama untuk kendaraan ini."
-              actionLabel="Catat Service"
-              onAction={() => navigate(`${ROUTES.SERVICE_NEW}?vehicleId=${activeVehicleId}`)}
-            />
-          )}
+          {filteredServices.length === 0 && !isLoading && (
+              <EmptyState
+                title="Belum ada service"
+                description={isAllVehicles ? "Belum ada catatan service untuk semua kendaraan." : "Catat service pertama untuk kendaraan ini."}
+                actionLabel="Catat Service"
+                onAction={() => navigate(isAllVehicles ? ROUTES.SERVICE_NEW : `${ROUTES.SERVICE_NEW}?vehicleId=${selectedVehicleId}`)}
+              />
+            )}
 
           {!isLoading && filteredServices.length > 0 && (
             <VStack gap={4} align="stretch">
               {filteredServices.map((service) => (
-                <Box key={service.id} bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={5}>
+                <Box
+                  key={service.id}
+                  bg="surface"
+                  borderWidth="1px"
+                  borderColor="border"
+                  borderRadius="xl"
+                  p={5}
+                >
                   <Flex justify="space-between" align="start" gap={4} flexWrap="wrap">
                     <Box>
                       <Text fontSize="sm" color="textMuted">
                         {formatDate(service.serviceDate)}
+                        {isAllVehicles && 'vehicleName' in service && (
+                          <Text as="span" ml={2} fontWeight="semibold">
+                            • {service.vehicleName}
+                          </Text>
+                        )}
                       </Text>
                       <Heading size="sm" mt={1}>
                         {SERVICE_TYPES[service.serviceType]}
@@ -253,7 +323,15 @@ export default function Services() {
           )}
 
           {pagination && pagination.totalPages > 1 && (
-            <Flex justify="space-between" align="center" bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={4}>
+            <Flex
+              justify="space-between"
+              align="center"
+              bg="surface"
+              borderWidth="1px"
+              borderColor="border"
+              borderRadius="xl"
+              p={4}
+            >
               <Text fontSize="sm" color="textMuted">
                 Halaman {pagination.page} dari {pagination.totalPages}
               </Text>
@@ -277,10 +355,6 @@ export default function Services() {
               </HStack>
             </Flex>
           )}
-
-          <Text fontSize="xs" color="textMuted">
-            TODO: Tambahkan opsi "Semua kendaraan" dengan agregasi service lintas kendaraan.
-          </Text>
         </VStack>
       </Container>
     </Layout>

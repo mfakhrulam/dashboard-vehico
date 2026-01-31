@@ -12,10 +12,17 @@ import { useVehicles } from '@/hooks/useVehicles';
 export default function Garage() {
   const navigate = useNavigate();
   const { ownedVehicles, sharedVehicles, isLoading } = useVehicles();
-  const [activeTab, setActiveTab] = useState<'owned' | 'shared'>('owned');
+  const [activeTab, setActiveTab] = useState<'all' | 'owned' | 'shared'>('all');
 
   const totalVehicles = ownedVehicles.length + sharedVehicles.length;
-  const visibleVehicles = activeTab === 'owned' ? ownedVehicles : sharedVehicles;
+  const allVehicles = [...ownedVehicles, ...sharedVehicles];
+  
+  const getVisibleVehicles = () => {
+    if (activeTab === 'all') return allVehicles;
+    if (activeTab === 'owned') return ownedVehicles;
+    return sharedVehicles;
+  };
+  const visibleVehicles = getVisibleVehicles();
 
   return (
     <Layout>
@@ -34,6 +41,20 @@ export default function Garage() {
           <Flex justify="space-between" align={{ base: 'start', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={4}>
             <Heading size="md">Daftar Kendaraan</Heading>
             <HStack gap={2} role="tablist" aria-label="Tabs kendaraan">
+              <Button
+                size="md"
+                h="48px"
+                variant={activeTab === 'all' ? 'solid' : 'outline'}
+                colorPalette={activeTab === 'all' ? 'brand' : undefined}
+                onClick={() => setActiveTab('all')}
+                role="tab"
+                aria-selected={activeTab === 'all'}
+              >
+                Semua
+                <Badge ml={2} colorPalette="brand">
+                  {totalVehicles}
+                </Badge>
+              </Button>
               <Button
                 size="md"
                 h="48px"

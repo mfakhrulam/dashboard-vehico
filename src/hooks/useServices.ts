@@ -15,7 +15,8 @@ export const useServices = (vehicleId: number, page = 1, limit = 20) => {
       const response = await serviceService.getByVehicle(vehicleId, page, limit);
       return response;
     },
-    enabled: !!vehicleId,
+    enabled: typeof vehicleId === 'number' && vehicleId > 0,
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   return {
@@ -40,10 +41,35 @@ export const useService = (serviceId: number) => {
       return response.data;
     },
     enabled: !!serviceId,
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   return {
     service: data,
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
+// Hook to fetch all services across all vehicles with server-side pagination
+export const useAllServices = (page = 1, limit = 10) => {
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['services', 'all', page, limit],
+    queryFn: async () => {
+      const response = await serviceService.getAll(page, limit);
+      return response;
+    },
+  });
+
+  return {
+    services: data?.data || [],
+    pagination: data?.pagination,
     isLoading,
     error,
     refetch,
