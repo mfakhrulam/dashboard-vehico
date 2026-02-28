@@ -400,7 +400,7 @@ export default function Dashboard() {
           borderRadius="full"
           boxShadow="lg"
           position="fixed"
-          bottom={6}
+          bottom={{ base: 24, md: 6 }}
           right={6}
           zIndex="docked"
           onClick={() => setIsQuickServiceOpen(true)}
