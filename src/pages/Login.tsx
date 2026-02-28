@@ -10,28 +10,19 @@ import { parseApiError } from '@/utils/error';
 import { useEffect } from 'react';
 
 const loginSchema = z.object({
-  email: z.string().email('Email tidak valid'),
+  email: z.email('Email tidak valid'),
   password: z.string().min(6, 'Password minimal 6 karakter'),
 });
 
 // Validator functions
-const validateEmail = (value: string) => {
-  try {
-    loginSchema.shape.email.parse(value);
-    return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid email';
-  }
+const validateField = (schema: z.ZodType, value: unknown): string | undefined => {
+  const result = schema.safeParse(value);
+  if (result.success) return undefined;
+  return result.error.issues[0]?.message;
 };
 
-const validatePassword = (value: string) => {
-  try {
-    loginSchema.shape.password.parse(value);
-    return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid password';
-  }
-};
+const validateEmail = (value: string) => validateField(loginSchema.shape.email, value);
+const validatePassword = (value: string) => validateField(loginSchema.shape.password, value);
 
 export default function Login() {
   const { isAuthenticated, login, isLoggingIn, loginError, formErrors, setFormErrors } = useAuth();
@@ -42,17 +33,7 @@ export default function Login() {
       password: '',
     },
     onSubmit: async ({ value }) => {
-      try {
-        login(value);
-      } catch (error: any) {
-        const { message, formErrors: newFormErrors } = parseApiError(error);
-        setFormErrors(newFormErrors || {});
-        toaster.create({
-          title: 'Login gagal',
-          description: message,
-          type: 'error',
-        });
-      }
+      login(value);
     },
   });
 
@@ -100,8 +81,8 @@ export default function Login() {
                         {Object.entries(formErrors).map(([field, messages]) => (
                           <VStack key={field} align="start" gap={0.5} ps={2} borderLeftWidth="2px" borderLeftColor="red.500">
                             <Text fontSize="sm" fontWeight="medium">{field}</Text>
-                            {messages.map((msg, idx) => (
-                              <Text key={idx} fontSize="xs" color="red.700">• {msg}</Text>
+                            {messages.map((msg) => (
+                              <Text key={`${field}-${msg}`} fontSize="xs" color="red.700">• {msg}</Text>
                             ))}
                           </VStack>
                         ))}

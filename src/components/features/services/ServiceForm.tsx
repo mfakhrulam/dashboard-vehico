@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -99,10 +99,14 @@ export default function ServiceForm({
     partsCatalog.map((p: PartResponse) => ({ label: p.partName, value: p.partName })),
     [partsCatalog]
   );
-  const { collection: partsCollection, filter: filterParts } = useListCollection({
+  const { collection: partsCollection, filter: filterParts, set: setPartsCollection } = useListCollection({
     initialItems: partsItems,
     filter: contains,
   });
+
+  useEffect(() => {
+    setPartsCollection(partsItems);
+  }, [partsItems, setPartsCollection]);
 
   const defaultServiceDate = useMemo(() => {
     if (initialValues?.serviceDate) {

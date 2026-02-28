@@ -17,7 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Link as RouterLink, useNavigate } from 'react-router';
-import { FiActivity, FiBarChart2, FiBell, FiChevronDown, FiClock, FiDollarSign, FiPlus, FiTool, FiTruck } from 'react-icons/fi';
+import { FiActivity, FiBell, FiChevronDown, FiClock, FiDollarSign, FiPlus, FiTool, FiTruck } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useRecentServices } from '@/hooks/useServices';

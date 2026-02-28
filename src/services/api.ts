@@ -16,8 +16,8 @@ export const api = axios.create({
 // Flag to prevent multiple refresh token requests
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: (value?: any) => void;
-  reject: (reason?: any) => void;
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
 }> = [];
 
 const processQueue = (error: Error | null, token: string | null = null) => {
@@ -83,7 +83,7 @@ api.interceptors.response.use(
     if (!refreshToken) {
       // No refresh token, logout
       useAuthStore.getState().logout();
-      window.location.href = '/login';
+      globalThis.location.href = '/login';
       throw error;
     }
 
@@ -120,7 +120,7 @@ api.interceptors.response.use(
       // Refresh token failed, logout
       processQueue(refreshError as Error, null);
       useAuthStore.getState().logout();
-      window.location.href = '/login';
+      globalThis.location.href = '/login';
       throw refreshError;
     } finally {
       isRefreshing = false;

@@ -86,7 +86,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               Maaf, terjadi kesalahan yang tidak terduga. Silakan coba lagi atau muat ulang halaman.
             </Text>
 
-            {error && process.env.NODE_ENV === 'development' && (
+            {error && import.meta.env.DEV && (
               <Box
                 bg="bg"
                 borderRadius="lg"

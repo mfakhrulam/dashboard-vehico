@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
-import { Box, Button, Container, Flex, Heading, HStack, Icon, Spacer, Text } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, Heading, HStack, Icon, Text } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router';
 import { FiHome, FiTool, FiTruck, FiUser } from 'react-icons/fi';
 import { ColorModeButton } from '@/components/ui/color-mode';

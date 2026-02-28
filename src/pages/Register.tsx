@@ -11,37 +11,27 @@ import { useEffect } from 'react';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Nama minimal 2 karakter'),
-  email: z.string().email('Email tidak valid'),
+  email: z.email('Email tidak valid'),
   password: z.string().min(6, 'Password minimal 6 karakter'),
-});
-
-// Validator functions untuk setiap field
-const validateName = (value: string) => {
-  try {
-    registerSchema.shape.name.parse(value);
-    return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid name';
+  confirmPassword: z.string().min(1, 'Konfirmasi password wajib diisi'),
+}).refine(
+  (data) => data.password === data.confirmPassword,
+  {
+    message: 'Password tidak cocok',
+    path: ['confirmPassword'],
   }
+);
+
+// Validator functions
+const validateField = (schema: z.ZodType, value: unknown): string | undefined => {
+  const result = schema.safeParse(value);
+  if (result.success) return undefined;
+  return result.error.issues[0]?.message;
 };
 
-const validateEmail = (value: string) => {
-  try {
-    registerSchema.shape.email.parse(value);
-    return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid email';
-  }
-};
-
-const validatePassword = (value: string) => {
-  try {
-    registerSchema.shape.password.parse(value);
-    return undefined;
-  } catch (error: any) {
-    return error.errors?.[0]?.message || 'Invalid password';
-  }
-};
+const validateName = (value: string) => validateField(registerSchema.shape.name, value);
+const validateEmail = (value: string) => validateField(registerSchema.shape.email, value);
+const validatePassword = (value: string) => validateField(registerSchema.shape.password, value);
 
 export default function Register() {
   const { isAuthenticated, register, isRegistering, registerError, formErrors, setFormErrors } = useAuth();
@@ -51,19 +41,10 @@ export default function Register() {
       name: '',
       email: '',
       password: '',
+      confirmPassword: '',
     },
     onSubmit: async ({ value }) => {
-      try {
-        register(value);
-      } catch (error: any) {
-        const { message, formErrors: newFormErrors } = parseApiError(error);
-        setFormErrors(newFormErrors || {});
-        toaster.create({
-          title: 'Registrasi gagal',
-          description: message,
-          type: 'error',
-        });
-      }
+      register({ name: value.name, email: value.email, password: value.password });
     },
   });
 
@@ -111,8 +92,8 @@ export default function Register() {
                         {Object.entries(formErrors).map(([field, messages]) => (
                           <VStack key={field} align="start" gap={0.5} ps={2} borderLeftWidth="2px" borderLeftColor="red.500">
                             <Text fontSize="sm" fontWeight="medium">{field}</Text>
-                            {messages.map((msg, idx) => (
-                              <Text key={idx} fontSize="xs" color="red.700">• {msg}</Text>
+                            {messages.map((msg) => (
+                              <Text key={`${field}-${msg}`} fontSize="xs" color="red.700">• {msg}</Text>
                             ))}
                           </VStack>
                         ))}
@@ -197,6 +178,43 @@ export default function Register() {
                   return (
                     <Field
                       label="Password"
+                      invalid={!!allErrors.length}
+                      errorText={allErrors[0]}
+                    >
+                      <Input
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        placeholder="******"
+                        type="password"
+                        size="lg"
+                      />
+                    </Field>
+                  );
+                }}
+              </form.Field>
+
+              <form.Field
+                name="confirmPassword"
+                validators={{
+                  onChangeListenTo: ['password'],
+                  onChange: ({ value, fieldApi }) => {
+                    if (value && value !== fieldApi.form.getFieldValue('password')) {
+                      return 'Password tidak cocok';
+                    }
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => {
+                  const backendErrors = formErrors['confirmPassword'] || [];
+                  const clientErrors = field.state.meta.errors;
+                  const allErrors = [...backendErrors, ...clientErrors];
+
+                  return (
+                    <Field
+                      label="Konfirmasi Password"
                       invalid={!!allErrors.length}
                       errorText={allErrors[0]}
                     >
