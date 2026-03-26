@@ -1,10 +1,15 @@
 import { Box, Circle, Flex, HStack, Icon, Text, VStack, Button } from '@chakra-ui/react';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router';
-import { FiCalendar, FiEdit2, FiSettings, FiTool, FiRefreshCw, FiPackage, FiUser } from 'react-icons/fi';
+import { FiCalendar, FiEdit2, FiSettings, FiTool, FiRefreshCw, FiPackage, FiUser, FiTrash2 } from 'react-icons/fi';
 import type { ServiceRecordResponse } from '@/types/service.types';
 import type { ServiceType } from '@/types/common.types';
 import { SERVICE_TYPES, ROUTES } from '@/config/constants';
 import { formatDate, formatOdometer, formatCurrency } from '@/utils/format';
+import { serviceService } from '@/services/service.service';
+import { toaster } from '@/components/ui/toaster';
+import { parseApiError } from '@/utils/error';
 
 interface ServiceTimelineProps {
   services: ServiceRecordResponse[];
@@ -66,6 +71,40 @@ function groupServicesByMonth(services: ServiceRecordResponse[]) {
 }
 
 export default function ServiceTimeline({ services, canEdit = false }: Readonly<ServiceTimelineProps>) {
+  const queryClient = useQueryClient();
+  const [deletingServiceId, setDeletingServiceId] = useState<number | null>(null);
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: (serviceId: number) => serviceService.delete(serviceId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['services'] });
+      await queryClient.invalidateQueries({ queryKey: ['service'] });
+      toaster.create({
+        title: 'Service dihapus',
+        description: 'Catatan service berhasil dihapus.',
+        type: 'success',
+      });
+    },
+    onError: (error) => {
+      const { message } = parseApiError(error);
+      toaster.create({
+        title: 'Gagal menghapus service',
+        description: message,
+        type: 'error',
+      });
+    },
+    onSettled: () => {
+      setDeletingServiceId(null);
+    },
+  });
+
+  const handleDeleteService = (serviceId: number) => {
+    const confirmed = globalThis.confirm('Hapus catatan service ini? Aksi ini tidak bisa dibatalkan.');
+    if (!confirmed) return;
+    setDeletingServiceId(serviceId);
+    deleteServiceMutation.mutate(serviceId);
+  };
+
   if (services.length === 0) {
     return (
       <Box textAlign="center" py={8} bg="bg" borderRadius="lg" borderWidth="1px" borderColor="border">
@@ -268,14 +307,28 @@ export default function ServiceTimeline({ services, canEdit = false }: Readonly<
                         <Text>Oleh: {service.performedBy.name}</Text>
                       </HStack>
                       {canEdit && (
-                        <RouterLink to={ROUTES.SERVICE_EDIT(service.id)}>
-                          <Button size="xs" variant="ghost">
+                        <HStack gap={1}>
+                          <RouterLink to={ROUTES.SERVICE_EDIT(service.id)}>
+                            <Button size="xs" variant="ghost">
+                              <HStack gap={1}>
+                                <Icon as={FiEdit2} />
+                                <Text>Edit</Text>
+                              </HStack>
+                            </Button>
+                          </RouterLink>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            colorPalette="red"
+                            loading={deletingServiceId === service.id && deleteServiceMutation.isPending}
+                            onClick={() => handleDeleteService(service.id)}
+                          >
                             <HStack gap={1}>
-                              <Icon as={FiEdit2} />
-                              <Text>Edit</Text>
+                              <Icon as={FiTrash2} />
+                              <Text>Hapus</Text>
                             </HStack>
                           </Button>
-                        </RouterLink>
+                        </HStack>
                       )}
                     </Flex>
                   </Box>
