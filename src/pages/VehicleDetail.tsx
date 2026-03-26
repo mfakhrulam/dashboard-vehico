@@ -1,7 +1,8 @@
 import { Box, Button, Container, Flex, Heading, HStack, Icon, SimpleGrid, Stack, Text, VStack, Tabs } from '@chakra-ui/react';
 import { useState } from 'react';
 import type { ElementType } from 'react';
-import { Link as RouterLink, useParams } from 'react-router';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FiActivity, FiCalendar, FiDollarSign, FiEdit2, FiShare2, FiTool, FiUser, FiClock, FiList } from 'react-icons/fi';
 import { useVehicle } from '@/hooks/useVehicles';
 import { useServices } from '@/hooks/useServices';
@@ -12,9 +13,14 @@ import PageHeader from '@/components/layout/PageHeader';
 import ShareVehicleModal from '@/components/features/vehicles/ShareVehicleModal';
 import ServiceTimeline from '@/components/features/services/ServiceTimeline';
 import MaintenanceSchedule from '@/components/features/vehicles/MaintenanceSchedule';
+import { vehicleService } from '@/services/vehicle.service';
+import { toaster } from '@/components/ui/toaster';
+import { parseApiError } from '@/utils/error';
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const vehicleId = Number.parseInt(id || '0', 10);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -23,8 +29,37 @@ export default function VehicleDetail() {
 
   const latestService = services[0];
 
+  const deleteVehicleMutation = useMutation({
+    mutationFn: () => vehicleService.delete(vehicleId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      await queryClient.invalidateQueries({ queryKey: ['vehicle', vehicleId] });
+      toaster.create({
+        title: 'Kendaraan dihapus',
+        description: 'Data kendaraan berhasil dihapus.',
+        type: 'success',
+      });
+      navigate(ROUTES.GARAGE);
+    },
+    onError: (error) => {
+      const { message } = parseApiError(error);
+      toaster.create({
+        title: 'Gagal menghapus kendaraan',
+        description: message,
+        type: 'error',
+      });
+    },
+  });
+
   const isOwner = vehicle?.permission === 'owner' || !vehicle?.permission;
   const canEdit = vehicle?.permission === 'owner' || vehicle?.permission === 'edit';
+
+  const handleDeleteVehicle = () => {
+    if (!vehicle) return;
+    const confirmed = globalThis.confirm(`Hapus kendaraan "${vehicle.name}"? Aksi ini tidak bisa dibatalkan.`);
+    if (!confirmed) return;
+    deleteVehicleMutation.mutate();
+  };
 
   return (
     <Layout>
@@ -124,6 +159,17 @@ export default function VehicleDetail() {
                             <Icon as={FiShare2} />
                             <Text>Kelola Berbagi</Text>
                           </HStack>
+                        </Button>
+                      )}
+                      {isOwner && (
+                        <Button
+                          variant="outline"
+                          colorPalette="red"
+                          h="48px"
+                          loading={deleteVehicleMutation.isPending}
+                          onClick={handleDeleteVehicle}
+                        >
+                          Hapus Kendaraan
                         </Button>
                       )}
                     </HStack>

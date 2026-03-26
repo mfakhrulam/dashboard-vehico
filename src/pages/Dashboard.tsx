@@ -15,6 +15,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Link as RouterLink, useNavigate } from 'react-router';
 import { FiActivity, FiBell, FiChevronDown, FiClock, FiDollarSign, FiPlus, FiTool, FiTruck } from 'react-icons/fi';
@@ -28,6 +29,8 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import VehicleCard from '@/components/features/vehicles/VehicleCard';
 import QuickServiceModal from '@/components/features/services/QuickServiceModal';
 import Layout from '@/components/layout/Layout';
+import { vehicleService } from '@/services/vehicle.service';
+import type { MaintenanceItem } from '@/types/vehicle.types';
 
 interface StatsCardProps {
   title: string;
@@ -41,6 +44,12 @@ interface HealthMetric {
   value: number;
   status: 'ok' | 'warn' | 'danger';
 }
+
+const mapMaintenanceStatus = (status: MaintenanceItem['status']): HealthMetric['status'] => {
+  if (status === 'overdue') return 'danger';
+  if (status === 'warning') return 'warn';
+  return 'ok';
+};
 
 const statusColorMap: Record<HealthMetric['status'], string> = {
   ok: 'brand.solid',
@@ -100,14 +109,43 @@ export default function Dashboard() {
   const primaryVehicle = ownedVehicles[0] ?? sharedVehicles[0];
   const visibleVehicles = activeTab === 'owned' ? ownedVehicles : sharedVehicles;
 
+  const { data: maintenanceSchedule } = useQuery({
+    queryKey: ['vehicle-maintenance', primaryVehicle?.id],
+    queryFn: async () => {
+      const response = await vehicleService.getMaintenanceSchedule(primaryVehicle.id);
+      return response.data;
+    },
+    enabled: !!primaryVehicle,
+  });
+
   const healthMetrics: HealthMetric[] = useMemo(
-    () => [
-      { label: 'Oli Mesin', value: 75, status: 'warn' },
-      { label: 'Kampas Rem', value: 40, status: 'ok' },
-      { label: 'Ban Depan', value: 85, status: 'danger' },
-    ],
-    [],
+    () =>
+      (maintenanceSchedule?.items ?? [])
+        .slice(0, 3)
+        .map((item) => {
+          const rawProgress = Math.max(item.kmProgress ?? 0, item.monthProgress ?? 0);
+          return {
+            label: item.partName,
+            value: Math.min(Math.round(rawProgress), 100),
+            status: mapMaintenanceStatus(item.status),
+          };
+        }),
+    [maintenanceSchedule],
   );
+
+  const upcomingServices = useMemo(() => {
+    if (!maintenanceSchedule?.items?.length) return 0;
+
+    const now = new Date();
+    const dueThreshold = new Date(now);
+    dueThreshold.setDate(dueThreshold.getDate() + 30);
+
+    return maintenanceSchedule.items.filter((item) => {
+      if (!item.nextDueDate) return false;
+      const dueDate = new Date(item.nextDueDate);
+      return dueDate >= now && dueDate <= dueThreshold;
+    }).length;
+  }, [maintenanceSchedule]);
 
   return (
     <Layout>
@@ -227,7 +265,7 @@ export default function Dashboard() {
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4}>
             <StatsCard title="Total Kendaraan" value={`${totalVehicles}`} helperText="Termasuk kendaraan dibagikan" icon={FiTruck} />
             <StatsCard title="Total Service" value={`${totalServicesThisMonth}`} helperText="Service bulan ini" icon={FiActivity} />
-            <StatsCard title="Service Mendatang" value="0" helperText="Dalam 30 hari" icon={FiClock} />
+            <StatsCard title="Service Mendatang" value={`${upcomingServices}`} helperText="Dalam 30 hari" icon={FiClock} />
             <StatsCard title="Total Biaya" value={formatCurrency(totalCostThisMonth)} helperText="Pengeluaran bulan ini" icon={FiDollarSign} />
           </SimpleGrid>
 
@@ -252,9 +290,11 @@ export default function Dashboard() {
                     </Box>
                   </Box>
                 ))}
-                <Text fontSize="xs" color="textMuted">
-                  TODO: Hubungkan dengan jadwal perawatan aktual.
-                </Text>
+                {healthMetrics.length === 0 && (
+                  <Text fontSize="sm" color="textMuted">
+                    Belum ada data jadwal perawatan untuk kendaraan aktif.
+                  </Text>
+                )}
               </VStack>
             </Box>
 

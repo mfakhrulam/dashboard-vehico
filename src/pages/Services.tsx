@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Button,
@@ -25,6 +26,9 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
 import type { VehicleResponse } from '@/types/vehicle.types';
+import { serviceService } from '@/services/service.service';
+import { toaster } from '@/components/ui/toaster';
+import { parseApiError } from '@/utils/error';
 
 interface FilterState {
   serviceType: string;
@@ -95,6 +99,7 @@ interface ServiceListProps {
 
 function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<FilterState>({
@@ -102,6 +107,7 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
     startDate: '',
     endDate: '',
   });
+  const [deletingServiceId, setDeletingServiceId] = useState<number | null>(null);
 
   const vehicleOptions = useMemo(
     () =>
@@ -125,6 +131,37 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
   const allVehiclesQuery = useAllServices(page, DEFAULT_LIMIT);
 
   const { services, pagination, isLoading } = isAllVehicles ? allVehiclesQuery : singleVehicleQuery;
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: (serviceId: number) => serviceService.delete(serviceId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['services'] });
+      await queryClient.invalidateQueries({ queryKey: ['service'] });
+      toaster.create({
+        title: 'Service dihapus',
+        description: 'Catatan service berhasil dihapus.',
+        type: 'success',
+      });
+    },
+    onError: (error) => {
+      const { message } = parseApiError(error);
+      toaster.create({
+        title: 'Gagal menghapus service',
+        description: message,
+        type: 'error',
+      });
+    },
+    onSettled: () => {
+      setDeletingServiceId(null);
+    },
+  });
+
+  const handleDeleteService = (serviceId: number) => {
+    const confirmed = globalThis.confirm('Hapus catatan service ini? Aksi ini tidak bisa dibatalkan.');
+    if (!confirmed) return;
+    setDeletingServiceId(serviceId);
+    deleteServiceMutation.mutate(serviceId);
+  };
 
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
@@ -323,6 +360,15 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
                         Edit
                       </Button>
                     </RouterLink>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorPalette="red"
+                      loading={deletingServiceId === service.id && deleteServiceMutation.isPending}
+                      onClick={() => handleDeleteService(service.id)}
+                    >
+                      Hapus
+                    </Button>
                   </HStack>
                 </Box>
               ))}
