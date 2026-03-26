@@ -1,4 +1,4 @@
-import { Box, Button, Container, Heading, Input, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Container, Heading, HStack, Input, Text, VStack } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
@@ -8,6 +8,8 @@ import { authService } from '@/services/auth.service';
 import { toaster } from '@/components/ui/toaster';
 import { parseApiError } from '@/utils/error';
 import { Field } from '@/components/ui/field';
+import { ROUTES } from '@/config/constants';
+import { Link as RouterLink } from 'react-router';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Password saat ini wajib diisi'),
@@ -71,6 +73,20 @@ export default function Profile() {
       <Container maxW="7xl">
         <VStack gap={6} align="stretch">
           <Heading>Profile</Heading>
+
+          <Box bg="bg.muted" p={6} borderRadius="lg" borderWidth="1px">
+            <VStack align="stretch" gap={3}>
+              <Heading size="md">Pengaturan Akun</Heading>
+              <Text color="textMuted">
+                Atur tema aplikasi dan lakukan logout dari halaman Settings.
+              </Text>
+              <HStack>
+                <RouterLink to={ROUTES.SETTINGS}>
+                  <Button variant="outline">Buka Settings</Button>
+                </RouterLink>
+              </HStack>
+            </VStack>
+          </Box>
 
           <Box bg="bg.muted" p={6} borderRadius="lg" borderWidth="1px">
             <VStack gap={4} align="stretch">

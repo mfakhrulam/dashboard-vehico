@@ -29,6 +29,7 @@ export const ROUTES = {
   SERVICE_EDIT: (id: string | number) => `/services/${id}/edit`,
   PARTS: '/parts',
   PROFILE: '/profile',
+  SETTINGS: '/settings',
 } as const;
 
 export const SERVICE_TYPES = {
