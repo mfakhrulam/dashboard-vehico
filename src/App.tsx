@@ -8,7 +8,7 @@ import VehicleDetail from '@/pages/VehicleDetail';
 import VehicleCreate from '@/pages/VehicleCreate';
 import VehicleEdit from '@/pages/VehicleEdit';
 import Profile from '@/pages/Profile';
-import Settings from '@/pages/Settings';
+import Settings from './pages/Settings';
 import ServiceCreate from '@/pages/ServiceCreate';
 import ServiceEdit from '@/pages/ServiceEdit';
 import Services from '@/pages/Services';

@@ -1,7 +1,8 @@
-import { Box, Button, Container, Heading, HStack, Input, Text, VStack } from '@chakra-ui/react';
+import { Badge, Box, Button, Container, Heading, HStack, Input, SimpleGrid, Text, VStack } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
+import { FiArrowRight, FiShield, FiUser } from 'react-icons/fi';
 import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/auth.service';
@@ -72,162 +73,206 @@ export default function Profile() {
     <Layout>
       <Container maxW="7xl">
         <VStack gap={6} align="stretch">
-          <Heading>Profile</Heading>
-
-          <Box bg="bg.muted" p={6} borderRadius="lg" borderWidth="1px">
+          <Box
+            bgGradient="to-r"
+            gradientFrom="brand.subtle"
+            gradientTo="bg"
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="xl"
+            p={{ base: 5, md: 6 }}
+          >
             <VStack align="stretch" gap={3}>
-              <Heading size="md">Pengaturan Akun</Heading>
-              <Text color="textMuted">
-                Atur tema aplikasi dan lakukan logout dari halaman Settings.
-              </Text>
-              <HStack>
-                <RouterLink to={ROUTES.SETTINGS}>
-                  <Button variant="outline">Buka Settings</Button>
-                </RouterLink>
+              <HStack justify="space-between" align="start" flexWrap="wrap">
+                <VStack align="start" gap={1}>
+                  <Heading size="lg">Profil Akun</Heading>
+                  <Text color="textMuted">
+                    Kelola data akun dan keamanan login dari satu tempat.
+                  </Text>
+                </VStack>
+                <Badge colorPalette="brand" variant="subtle">
+                  Aktif
+                </Badge>
+              </HStack>
+              <HStack gap={2} color="textMuted" flexWrap="wrap">
+                <FiUser />
+                <Text fontSize="sm">{user?.email || profile?.email}</Text>
               </HStack>
             </VStack>
           </Box>
 
-          <Box bg="bg.muted" p={6} borderRadius="lg" borderWidth="1px">
-            <VStack gap={4} align="stretch">
-              <Box>
-                <Text fontWeight="semibold" mb={1}>
-                  Nama
-                </Text>
-                <Text>{user?.name || profile?.name}</Text>
-              </Box>
+          <SimpleGrid columns={{ base: 1, lg: 3 }} gap={6}>
+            <Box bg="surface" p={6} borderRadius="xl" borderWidth="1px" borderColor="border">
+              <VStack gap={5} align="stretch">
+                <Heading size="md">Informasi Akun</Heading>
 
-              <Box>
-                <Text fontWeight="semibold" mb={1}>
-                  Email
-                </Text>
-                <Text>{user?.email || profile?.email}</Text>
-              </Box>
-
-              {profile?.lastLoginAt && (
                 <Box>
                   <Text fontWeight="semibold" mb={1}>
-                    Last Login
+                    Nama
                   </Text>
-                  <Text>{new Date(profile.lastLoginAt).toLocaleString('id-ID')}</Text>
+                  <Text color="textMuted">{user?.name || profile?.name || '-'}</Text>
                 </Box>
-              )}
 
-              {profile?.lastLoginDevice && (
                 <Box>
                   <Text fontWeight="semibold" mb={1}>
-                    Device
+                    Email
                   </Text>
-                  <Text>{profile.lastLoginDevice}</Text>
+                  <Text color="textMuted">{user?.email || profile?.email || '-'}</Text>
                 </Box>
-              )}
-            </VStack>
-          </Box>
 
-          <Box bg="bg.muted" p={6} borderRadius="lg" borderWidth="1px">
-            <VStack align="stretch" gap={4}>
-              <Heading size="md">Ganti Password</Heading>
+                {profile?.lastLoginAt && (
+                  <Box>
+                    <Text fontWeight="semibold" mb={1}>
+                      Login Terakhir
+                    </Text>
+                    <Text color="textMuted">{new Date(profile.lastLoginAt).toLocaleString('id-ID')}</Text>
+                  </Box>
+                )}
 
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  form.handleSubmit();
-                }}
-              >
-                <VStack align="stretch" gap={4}>
-                  <form.Field
-                    name="currentPassword"
-                    validators={{
-                      onChange: ({ value }) => validateField(changePasswordSchema.shape.currentPassword, value),
-                    }}
-                  >
-                    {(field) => (
-                      <Field
-                        label="Password Saat Ini"
-                        invalid={field.state.meta.errors.length > 0}
-                        errorText={field.state.meta.errors[0]}
-                      >
-                        <Input
-                          type="password"
-                          size="lg"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Masukkan password saat ini"
-                        />
-                      </Field>
-                    )}
-                  </form.Field>
+                {profile?.lastLoginDevice && (
+                  <Box>
+                    <Text fontWeight="semibold" mb={1}>
+                      Perangkat
+                    </Text>
+                    <Text color="textMuted">{profile.lastLoginDevice}</Text>
+                  </Box>
+                )}
 
-                  <form.Field
-                    name="newPassword"
-                    validators={{
-                      onChange: ({ value }) => validateField(changePasswordSchema.shape.newPassword, value),
-                    }}
-                  >
-                    {(field) => (
-                      <Field
-                        label="Password Baru"
-                        helperText="Minimal 8 karakter, huruf besar, huruf kecil, dan angka"
-                        invalid={field.state.meta.errors.length > 0}
-                        errorText={field.state.meta.errors[0]}
-                      >
-                        <Input
-                          type="password"
-                          size="lg"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Masukkan password baru"
-                        />
-                      </Field>
-                    )}
-                  </form.Field>
+                <Box bg="bg" p={4} borderRadius="lg" borderWidth="1px" borderColor="border">
+                  <VStack align="stretch" gap={3}>
+                    <Text fontWeight="semibold">Pengaturan Akun</Text>
+                    <Text fontSize="sm" color="textMuted">
+                      Tema dan logout kini dipusatkan di halaman Pengaturan.
+                    </Text>
+                    <RouterLink to={ROUTES.SETTINGS}>
+                      <Button variant="outline" width="full">
+                        <HStack as="span" gap={2}>
+                          <Text>Buka Pengaturan</Text>
+                          <FiArrowRight />
+                        </HStack>
+                      </Button>
+                    </RouterLink>
+                  </VStack>
+                </Box>
+              </VStack>
+            </Box>
 
-                  <form.Field
-                    name="confirmPassword"
-                    validators={{
-                      onChangeListenTo: ['newPassword'],
-                      onChange: ({ value, fieldApi }) => {
-                        const requiredMessage = validateField(changePasswordSchema.shape.confirmPassword, value);
-                        if (requiredMessage) return requiredMessage;
-                        if (value !== fieldApi.form.getFieldValue('newPassword')) {
-                          return 'Konfirmasi password tidak sama';
-                        }
-                        return undefined;
-                      },
-                    }}
-                  >
-                    {(field) => (
-                      <Field
-                        label="Konfirmasi Password Baru"
-                        invalid={field.state.meta.errors.length > 0}
-                        errorText={field.state.meta.errors[0]}
-                      >
-                        <Input
-                          type="password"
-                          size="lg"
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Ulangi password baru"
-                        />
-                      </Field>
-                    )}
-                  </form.Field>
+            <Box bg="surface" p={6} borderRadius="xl" borderWidth="1px" borderColor="border" gridColumn={{ lg: 'span 2' }}>
+              <VStack align="stretch" gap={5}>
+                <HStack justify="space-between" align="start" flexWrap="wrap" gap={3}>
+                  <VStack align="start" gap={1}>
+                    <Heading size="md">Ganti Password</Heading>
+                    <Text color="textMuted" fontSize="sm">
+                      Gunakan kombinasi password yang kuat untuk keamanan akun.
+                    </Text>
+                  </VStack>
+                  <HStack bg="bg" borderWidth="1px" borderColor="border" px={3} py={2} borderRadius="md">
+                    <FiShield />
+                    <Text fontSize="sm">Keamanan Tinggi</Text>
+                  </HStack>
+                </HStack>
 
-                  <Button
-                    alignSelf="start"
-                    colorPalette="brand"
-                    type="submit"
-                    loading={changePasswordMutation.isPending}
-                  >
-                    Simpan Password Baru
-                  </Button>
-                </VStack>
-              </form>
-            </VStack>
-          </Box>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    form.handleSubmit();
+                  }}
+                >
+                  <VStack align="stretch" gap={4}>
+                    <form.Field
+                      name="currentPassword"
+                      validators={{
+                        onChange: ({ value }) => validateField(changePasswordSchema.shape.currentPassword, value),
+                      }}
+                    >
+                      {(field) => (
+                        <Field
+                          label="Password Saat Ini"
+                          invalid={field.state.meta.errors.length > 0}
+                          errorText={field.state.meta.errors[0]}
+                        >
+                          <Input
+                            type="password"
+                            size="lg"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            placeholder="Masukkan password saat ini"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+
+                    <form.Field
+                      name="newPassword"
+                      validators={{
+                        onChange: ({ value }) => validateField(changePasswordSchema.shape.newPassword, value),
+                      }}
+                    >
+                      {(field) => (
+                        <Field
+                          label="Password Baru"
+                          helperText="Minimal 8 karakter, huruf besar, huruf kecil, dan angka"
+                          invalid={field.state.meta.errors.length > 0}
+                          errorText={field.state.meta.errors[0]}
+                        >
+                          <Input
+                            type="password"
+                            size="lg"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            placeholder="Masukkan password baru"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+
+                    <form.Field
+                      name="confirmPassword"
+                      validators={{
+                        onChangeListenTo: ['newPassword'],
+                        onChange: ({ value, fieldApi }) => {
+                          const requiredMessage = validateField(changePasswordSchema.shape.confirmPassword, value);
+                          if (requiredMessage) return requiredMessage;
+                          if (value !== fieldApi.form.getFieldValue('newPassword')) {
+                            return 'Konfirmasi password tidak sama';
+                          }
+                          return undefined;
+                        },
+                      }}
+                    >
+                      {(field) => (
+                        <Field
+                          label="Konfirmasi Password Baru"
+                          invalid={field.state.meta.errors.length > 0}
+                          errorText={field.state.meta.errors[0]}
+                        >
+                          <Input
+                            type="password"
+                            size="lg"
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            placeholder="Ulangi password baru"
+                          />
+                        </Field>
+                      )}
+                    </form.Field>
+
+                    <Button
+                      alignSelf="start"
+                      colorPalette="brand"
+                      type="submit"
+                      loading={changePasswordMutation.isPending}
+                    >
+                      Simpan Password Baru
+                    </Button>
+                  </VStack>
+                </form>
+              </VStack>
+            </Box>
+          </SimpleGrid>
         </VStack>
       </Container>
     </Layout>

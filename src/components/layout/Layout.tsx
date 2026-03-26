@@ -2,7 +2,6 @@ import type { ComponentType, ReactNode } from 'react';
 import { Box, Button, Container, Flex, Heading, HStack, Icon, Text } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router';
 import { FiHome, FiSettings, FiTool, FiTruck, FiUser } from 'react-icons/fi';
-import { ColorModeButton } from '@/components/ui/color-mode';
 import { useAuth } from '@/hooks/useAuth';
 import { APP_NAME, ROUTES } from '@/config/constants';
 
@@ -48,7 +47,7 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
               <DesktopNavItem label="Garasi" to={ROUTES.GARAGE} isActive={activeNav === 'garage'} />
               <DesktopNavItem label="Service" to={ROUTES.SERVICES} isActive={activeNav === 'services'} />
               <DesktopNavItem label="Profil" to={ROUTES.PROFILE} isActive={activeNav === 'profile'} />
-              <DesktopNavItem label="Settings" to={ROUTES.SETTINGS} isActive={activeNav === 'settings'} />
+              <DesktopNavItem label="Pengaturan" to={ROUTES.SETTINGS} isActive={activeNav === 'settings'} />
             </HStack>
             <HStack gap={3} align="center">
               {user && (
@@ -56,7 +55,6 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
                   Halo, {user.name}
                 </Text>
               )}
-              <ColorModeButton />
               {user && (
                 <Button onClick={() => logout()} size="sm" variant="ghost">
                   Logout
@@ -112,7 +110,7 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
               isActive={activeNav === 'profile'}
             />
             <NavItem
-              label="Settings"
+              label="Pengaturan"
               to={ROUTES.SETTINGS}
               icon={FiSettings}
               isActive={activeNav === 'settings'}
