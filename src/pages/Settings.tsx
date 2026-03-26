@@ -24,6 +24,8 @@ export default function Settings() {
             borderColor="border"
             borderRadius="xl"
             p={{ base: 5, md: 6 }}
+            transition="all 0.2s ease"
+            _hover={{ borderColor: 'brand.emphasized' }}
           >
             <VStack align="stretch" gap={3}>
               <HStack justify="space-between" align="start" flexWrap="wrap" gap={3}>
@@ -45,7 +47,15 @@ export default function Settings() {
           </Box>
 
           <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6}>
-            <Box bg="surface" p={6} borderRadius="xl" borderWidth="1px" borderColor="border">
+            <Box
+              bg="surface"
+              p={6}
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor="border"
+              transition="all 0.2s ease"
+              _hover={{ borderColor: 'brand.emphasized' }}
+            >
               <VStack align="stretch" gap={5}>
                 <Heading size="md">Tampilan</Heading>
                 <Text color="textMuted">
@@ -81,13 +91,28 @@ export default function Settings() {
                   </Box>
                 </HStack>
 
-                <Button variant="outline" onClick={toggleColorMode} alignSelf="start">
+                <Button
+                  variant="outline"
+                  onClick={toggleColorMode}
+                  alignSelf="start"
+                  transition="all 0.2s ease"
+                  _hover={{ transform: 'translateY(-1px)', borderColor: 'brand.emphasized', bg: 'brand.subtle' }}
+                  _active={{ transform: 'translateY(0)' }}
+                >
                   Ganti ke mode {isLight ? 'Dark' : 'Light'}
                 </Button>
               </VStack>
             </Box>
 
-            <Box bg="surface" p={6} borderRadius="xl" borderWidth="1px" borderColor="border">
+            <Box
+              bg="surface"
+              p={6}
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor="border"
+              transition="all 0.2s ease"
+              _hover={{ borderColor: 'brand.emphasized' }}
+            >
               <VStack align="stretch" gap={5}>
                 <Heading size="md">Akun</Heading>
                 <Text color="textMuted">
@@ -101,7 +126,14 @@ export default function Settings() {
                       <Text>Kembali ke halaman profil untuk edit data dan password.</Text>
                     </HStack>
                     <RouterLink to={ROUTES.PROFILE}>
-                      <Button variant="outline">Ke Profil</Button>
+                      <Button
+                        variant="outline"
+                        transition="all 0.2s ease"
+                        _hover={{ transform: 'translateY(-1px)', borderColor: 'brand.emphasized', bg: 'brand.subtle' }}
+                        _active={{ transform: 'translateY(0)' }}
+                      >
+                        Ke Profil
+                      </Button>
                     </RouterLink>
                   </HStack>
                 </Box>
@@ -115,7 +147,15 @@ export default function Settings() {
                     <Text color="textMuted" fontSize="sm">
                       Setelah logout, Anda perlu login kembali untuk mengakses data kendaraan.
                     </Text>
-                    <Button colorPalette="red" onClick={() => logout()} loading={isLoggingOut} alignSelf="start">
+                    <Button
+                      colorPalette="red"
+                      onClick={() => logout()}
+                      loading={isLoggingOut}
+                      alignSelf="start"
+                      transition="all 0.2s ease"
+                      _hover={{ transform: 'translateY(-1px)', shadow: 'sm' }}
+                      _active={{ transform: 'translateY(0)' }}
+                    >
                       Logout
                     </Button>
                   </VStack>

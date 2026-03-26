@@ -81,6 +81,8 @@ export default function Profile() {
             borderColor="border"
             borderRadius="xl"
             p={{ base: 5, md: 6 }}
+            transition="all 0.2s ease"
+            _hover={{ borderColor: 'brand.emphasized' }}
           >
             <VStack align="stretch" gap={3}>
               <HStack justify="space-between" align="start" flexWrap="wrap">
@@ -145,7 +147,13 @@ export default function Profile() {
                       Tema dan logout kini dipusatkan di halaman Pengaturan.
                     </Text>
                     <RouterLink to={ROUTES.SETTINGS}>
-                      <Button variant="outline" width="full">
+                      <Button
+                        variant="outline"
+                        width="full"
+                        transition="all 0.2s ease"
+                        _hover={{ transform: 'translateY(-1px)', borderColor: 'brand.emphasized', bg: 'brand.subtle' }}
+                        _active={{ transform: 'translateY(0)' }}
+                      >
                         <HStack as="span" gap={2}>
                           <Text>Buka Pengaturan</Text>
                           <FiArrowRight />
@@ -157,7 +165,16 @@ export default function Profile() {
               </VStack>
             </Box>
 
-            <Box bg="surface" p={6} borderRadius="xl" borderWidth="1px" borderColor="border" gridColumn={{ lg: 'span 2' }}>
+            <Box
+              bg="surface"
+              p={6}
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor="border"
+              gridColumn={{ lg: 'span 2' }}
+              transition="all 0.2s ease"
+              _hover={{ borderColor: 'brand.emphasized' }}
+            >
               <VStack align="stretch" gap={5}>
                 <HStack justify="space-between" align="start" flexWrap="wrap" gap={3}>
                   <VStack align="start" gap={1}>
@@ -265,6 +282,9 @@ export default function Profile() {
                       colorPalette="brand"
                       type="submit"
                       loading={changePasswordMutation.isPending}
+                      transition="all 0.2s ease"
+                      _hover={{ transform: 'translateY(-1px)', shadow: 'sm' }}
+                      _active={{ transform: 'translateY(0)' }}
                     >
                       Simpan Password Baru
                     </Button>

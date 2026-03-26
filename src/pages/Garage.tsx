@@ -31,60 +31,77 @@ export default function Garage() {
           title="Garasi"
           description="Kelola semua kendaraan yang Anda miliki atau dibagikan."
           actions={
-            <Button colorPalette="brand" onClick={() => navigate(ROUTES.VEHICLE_CREATE)}>
+            <Button
+              colorPalette="brand"
+              onClick={() => navigate(ROUTES.VEHICLE_CREATE)}
+              transition="all 0.2s ease"
+              _hover={{ transform: 'translateY(-1px)', shadow: 'sm' }}
+              _active={{ transform: 'translateY(0)' }}
+            >
               Tambah Kendaraan
             </Button>
           }
         />
 
         <VStack gap={6} align="stretch">
-          <Flex justify="space-between" align={{ base: 'start', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={4}>
-            <Heading size="md">Daftar Kendaraan</Heading>
-            <HStack gap={2} role="tablist" aria-label="Tabs kendaraan">
-              <Button
-                size="md"
-                h="48px"
-                variant={activeTab === 'all' ? 'solid' : 'outline'}
-                colorPalette={activeTab === 'all' ? 'brand' : undefined}
-                onClick={() => setActiveTab('all')}
-                role="tab"
-                aria-selected={activeTab === 'all'}
-              >
-                Semua
-                <Badge ml={2} colorPalette="brand">
-                  {totalVehicles}
-                </Badge>
-              </Button>
-              <Button
-                size="md"
-                h="48px"
-                variant={activeTab === 'owned' ? 'solid' : 'outline'}
-                colorPalette={activeTab === 'owned' ? 'brand' : undefined}
-                onClick={() => setActiveTab('owned')}
-                role="tab"
-                aria-selected={activeTab === 'owned'}
-              >
-                Kendaraan Saya
-                <Badge ml={2} colorPalette="brand">
-                  {ownedVehicles.length}
-                </Badge>
-              </Button>
-              <Button
-                size="md"
-                h="48px"
-                variant={activeTab === 'shared' ? 'solid' : 'outline'}
-                colorPalette={activeTab === 'shared' ? 'brand' : undefined}
-                onClick={() => setActiveTab('shared')}
-                role="tab"
-                aria-selected={activeTab === 'shared'}
-              >
-                Dibagikan ke Saya
-                <Badge ml={2} colorPalette="gray">
-                  {sharedVehicles.length}
-                </Badge>
-              </Button>
-            </HStack>
-          </Flex>
+          <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={5}>
+            <Flex justify="space-between" align={{ base: 'start', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={4}>
+              <Heading size="md">Daftar Kendaraan</Heading>
+              <HStack gap={2} role="tablist" aria-label="Tabs kendaraan" flexWrap="wrap">
+                <Button
+                  size="md"
+                  h="48px"
+                  variant={activeTab === 'all' ? 'solid' : 'outline'}
+                  colorPalette={activeTab === 'all' ? 'brand' : undefined}
+                  onClick={() => setActiveTab('all')}
+                  role="tab"
+                  aria-selected={activeTab === 'all'}
+                  transition="all 0.2s ease"
+                  _hover={{ transform: 'translateY(-1px)' }}
+                  _active={{ transform: 'translateY(0)' }}
+                >
+                  Semua
+                  <Badge ml={2} colorPalette="brand">
+                    {totalVehicles}
+                  </Badge>
+                </Button>
+                <Button
+                  size="md"
+                  h="48px"
+                  variant={activeTab === 'owned' ? 'solid' : 'outline'}
+                  colorPalette={activeTab === 'owned' ? 'brand' : undefined}
+                  onClick={() => setActiveTab('owned')}
+                  role="tab"
+                  aria-selected={activeTab === 'owned'}
+                  transition="all 0.2s ease"
+                  _hover={{ transform: 'translateY(-1px)' }}
+                  _active={{ transform: 'translateY(0)' }}
+                >
+                  Kendaraan Saya
+                  <Badge ml={2} colorPalette="brand">
+                    {ownedVehicles.length}
+                  </Badge>
+                </Button>
+                <Button
+                  size="md"
+                  h="48px"
+                  variant={activeTab === 'shared' ? 'solid' : 'outline'}
+                  colorPalette={activeTab === 'shared' ? 'brand' : undefined}
+                  onClick={() => setActiveTab('shared')}
+                  role="tab"
+                  aria-selected={activeTab === 'shared'}
+                  transition="all 0.2s ease"
+                  _hover={{ transform: 'translateY(-1px)' }}
+                  _active={{ transform: 'translateY(0)' }}
+                >
+                  Dibagikan ke Saya
+                  <Badge ml={2} colorPalette="gray">
+                    {sharedVehicles.length}
+                  </Badge>
+                </Button>
+              </HStack>
+            </Flex>
+          </Box>
 
           {isLoading && <LoadingSpinner label="Memuat data kendaraan..." />}
 
