@@ -1,4 +1,5 @@
 import api from './api';
+import { DEFAULT_VEHICLE_IMAGE_URL } from '@/config/constants';
 import {
   VehicleListResponse,
   VehicleResponse,
@@ -11,17 +12,41 @@ import {
 } from '@/types/vehicle.types';
 import { ApiResponse } from '@/types/common.types';
 
+const normalizeVehiclePhotoUrl = (photoUrl: string | null): string => {
+  console.log('Normalizing photo URL:', { photoUrl });
+  if (photoUrl === null || photoUrl === undefined || photoUrl.trim() === '') {
+    return DEFAULT_VEHICLE_IMAGE_URL;
+  }
+
+  return photoUrl;
+};
+
+const mapVehicleResponse = (vehicle: VehicleResponse): VehicleResponse => ({
+  ...vehicle,
+  photoUrl: normalizeVehiclePhotoUrl(vehicle.photoUrl),
+});
+
+const mapVehicleListResponse = (listResponse: VehicleListResponse): VehicleListResponse => ({
+  owned: listResponse.owned.map(mapVehicleResponse),
+  shared: listResponse.shared.map(mapVehicleResponse),
+});
+
+const mapApiResponseData = <T>(response: ApiResponse<T>, mapper: (data: T) => T): ApiResponse<T> => ({
+  ...response,
+  data: response.data ? mapper(response.data) : response.data,
+});
+
 export const vehicleService = {
   // Get all vehicles (owned + shared)
   getAll: async () => {
     const response = await api.get<ApiResponse<VehicleListResponse>>('/vehicles');
-    return response.data;
+    return mapApiResponseData(response.data, mapVehicleListResponse);
   },
 
   // Get vehicle by ID
   getById: async (id: number) => {
     const response = await api.get<ApiResponse<VehicleResponse>>(`/vehicles/${id}`);
-    return response.data;
+    return mapApiResponseData(response.data, mapVehicleResponse);
   },
 
   // Create vehicle
@@ -38,7 +63,7 @@ export const vehicleService = {
     const response = await api.post<ApiResponse<VehicleResponse>>('/vehicles', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return response.data;
+    return mapApiResponseData(response.data, mapVehicleResponse);
   },
 
   // Update vehicle
@@ -55,7 +80,7 @@ export const vehicleService = {
     const response = await api.put<ApiResponse<VehicleResponse>>(`/vehicles/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return response.data;
+    return mapApiResponseData(response.data, mapVehicleResponse);
   },
 
   // Delete vehicle

@@ -1,5 +1,7 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const APP_NAME = import.meta.env.VITE_APP_NAME;
+export const DEFAULT_VEHICLE_IMAGE_URL = import.meta.env.BASE_URL + 'images/default-vehicle.png';
+
 
 export const TOKEN_KEYS = {
   ACCESS_TOKEN: 'vehico_access_token',

@@ -89,7 +89,7 @@ export default function VehicleCreate() {
             onCancel={handleCancel}
             isSubmitting={createMutation.isPending}
             formErrors={formErrors}
-            requirePhoto={true}
+            requirePhoto={false}
             onDirtyChange={setIsFormDirty}
           />
         </VStack>
