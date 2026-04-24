@@ -107,7 +107,7 @@ export const VehicleForm = ({
   onCancel,
   isSubmitting,
   formErrors = {},
-  requirePhoto = true,
+  requirePhoto = false,
   onDirtyChange,
 }: VehicleFormProps) => {
   const [photoError, setPhotoError] = useState<string>('');
@@ -446,7 +446,7 @@ export const VehicleForm = ({
 
         {/* Photo Upload */}
         <Field
-          label={mode === 'edit' ? 'Ganti Foto (opsional)' : 'Foto Kendaraan'}
+          label={mode === 'edit' ? 'Ganti Foto (opsional)' : 'Foto Kendaraan (opsional)'}
           invalid={!!photoError}
           errorText={photoError}
         >
