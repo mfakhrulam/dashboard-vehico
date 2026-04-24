@@ -11,6 +11,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import ServiceForm from '@/components/features/services/ServiceForm';
 import { toaster } from '@/components/ui/toaster';
 import type { CreateServiceRequest, UpdateServiceRequest } from '@/types/service.types';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 export default function ServiceEdit() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,8 @@ export default function ServiceEdit() {
   const navigate = useNavigate();
   const { service, isLoading } = useService(serviceId);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const { allowNavigation, confirmDiscard } = useUnsavedChanges({ isDirty: isFormDirty });
 
   const initialValues = useMemo(() => {
     if (!service) return undefined;
@@ -39,6 +42,7 @@ export default function ServiceEdit() {
         description: 'Catatan service berhasil diperbarui',
         type: 'success',
       });
+      allowNavigation();
       if (service) {
         navigate(ROUTES.VEHICLE_DETAIL(service.vehicleId));
         return;
@@ -90,7 +94,15 @@ export default function ServiceEdit() {
               { label: 'Edit Service' },
             ]}
           />
-          <VStack gap={6} align="stretch" bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={{ base: 5, md: 6 }}>
+          <VStack
+            gap={6}
+            align="stretch"
+            bg="surface"
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="xl"
+            p={{ base: 5, md: 6 }}
+          >
             <ServiceForm
               vehicleId={service.vehicleId}
               initialValues={initialValues}
@@ -111,7 +123,10 @@ export default function ServiceEdit() {
                 };
                 updateMutation.mutate(updatePayload);
               }}
-              onCancel={() => navigate(ROUTES.VEHICLE_DETAIL(service.vehicleId))}
+              onCancel={() =>
+                confirmDiscard(() => navigate(ROUTES.VEHICLE_DETAIL(service.vehicleId)))
+              }
+              onDirtyChange={setIsFormDirty}
             />
           </VStack>
         </Container>

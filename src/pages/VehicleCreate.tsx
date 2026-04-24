@@ -10,11 +10,14 @@ import { CreateVehicleRequest } from '@/types/vehicle.types';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
 import { VehicleForm, VehicleFormValues } from '@/components/features/vehicles/VehicleForm';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 export default function VehicleCreate() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const { allowNavigation, confirmDiscard } = useUnsavedChanges({ isDirty: isFormDirty });
 
   // Mutation for create vehicle
   const createMutation = useMutation({
@@ -22,12 +25,13 @@ export default function VehicleCreate() {
     onSuccess: () => {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-      
+
       toaster.create({
         title: 'Berhasil',
         description: 'Kendaraan berhasil ditambahkan',
         type: 'success',
       });
+      allowNavigation();
       navigate(ROUTES.GARAGE);
     },
     onError: (error) => {
@@ -56,7 +60,7 @@ export default function VehicleCreate() {
   };
 
   const handleCancel = () => {
-    navigate(ROUTES.GARAGE);
+    confirmDiscard(() => navigate(ROUTES.GARAGE));
   };
 
   return (
@@ -71,7 +75,14 @@ export default function VehicleCreate() {
             { label: 'Tambah Kendaraan' },
           ]}
         />
-        <VStack gap={8} bg="surface" p={{ base: 5, md: 6 }} borderRadius="xl" borderWidth="1px" borderColor="border">
+        <VStack
+          gap={8}
+          bg="surface"
+          p={{ base: 5, md: 6 }}
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor="border"
+        >
           <VehicleForm
             mode="create"
             onSubmit={handleSubmit}
@@ -79,6 +90,7 @@ export default function VehicleCreate() {
             isSubmitting={createMutation.isPending}
             formErrors={formErrors}
             requirePhoto={true}
+            onDirtyChange={setIsFormDirty}
           />
         </VStack>
       </Container>

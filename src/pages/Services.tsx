@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Button,
@@ -25,6 +26,9 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
 import type { VehicleResponse } from '@/types/vehicle.types';
+import { serviceService } from '@/services/service.service';
+import { toaster } from '@/components/ui/toaster';
+import { parseApiError } from '@/utils/error';
 
 interface FilterState {
   serviceType: string;
@@ -95,6 +99,7 @@ interface ServiceListProps {
 
 function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<FilterState>({
@@ -102,6 +107,7 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
     startDate: '',
     endDate: '',
   });
+  const [deletingServiceId, setDeletingServiceId] = useState<number | null>(null);
 
   const vehicleOptions = useMemo(
     () =>
@@ -125,6 +131,37 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
   const allVehiclesQuery = useAllServices(page, DEFAULT_LIMIT);
 
   const { services, pagination, isLoading } = isAllVehicles ? allVehiclesQuery : singleVehicleQuery;
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: (serviceId: number) => serviceService.delete(serviceId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['services'] });
+      await queryClient.invalidateQueries({ queryKey: ['service'] });
+      toaster.create({
+        title: 'Service dihapus',
+        description: 'Catatan service berhasil dihapus.',
+        type: 'success',
+      });
+    },
+    onError: (error) => {
+      const { message } = parseApiError(error);
+      toaster.create({
+        title: 'Gagal menghapus service',
+        description: message,
+        type: 'error',
+      });
+    },
+    onSettled: () => {
+      setDeletingServiceId(null);
+    },
+  });
+
+  const handleDeleteService = (serviceId: number) => {
+    const confirmed = globalThis.confirm('Hapus catatan service ini? Aksi ini tidak bisa dibatalkan.');
+    if (!confirmed) return;
+    setDeletingServiceId(serviceId);
+    deleteServiceMutation.mutate(serviceId);
+  };
 
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
@@ -158,13 +195,28 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
           description="Kelola semua catatan service kendaraan Anda."
           actions={
             <RouterLink to={ROUTES.SERVICE_NEW}>
-              <Button colorPalette="brand">Tambah Service</Button>
+              <Button
+                colorPalette="brand"
+                transition="all 0.2s ease"
+                _hover={{ transform: 'translateY(-1px)', shadow: 'sm' }}
+                _active={{ transform: 'translateY(0)' }}
+              >
+                Tambah Service
+              </Button>
             </RouterLink>
           }
         />
 
         <VStack gap={6} align="stretch">
-          <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={5}>
+          <Box
+            bg="surface"
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="xl"
+            p={5}
+            transition="all 0.2s ease"
+            _hover={{ borderColor: 'brand.emphasized' }}
+          >
             <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4} alignItems="end">
               <FilterField label="Kendaraan">
                 <Select.Root
@@ -278,6 +330,8 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
                   borderColor="border"
                   borderRadius="xl"
                   p={5}
+                  transition="all 0.2s ease"
+                  _hover={{ transform: 'translateY(-2px)', shadow: 'sm', borderColor: 'brand.emphasized' }}
                 >
                   <Flex justify="space-between" align="start" gap={4} flexWrap="wrap">
                     <Box>
@@ -319,10 +373,28 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
                       </Box>
                     )}
                     <RouterLink to={ROUTES.SERVICE_EDIT(service.id)}>
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        transition="all 0.2s ease"
+                        _hover={{ transform: 'translateY(-1px)', borderColor: 'brand.emphasized', bg: 'brand.subtle' }}
+                        _active={{ transform: 'translateY(0)' }}
+                      >
                         Edit
                       </Button>
                     </RouterLink>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      colorPalette="red"
+                      loading={deletingServiceId === service.id && deleteServiceMutation.isPending}
+                      onClick={() => handleDeleteService(service.id)}
+                      transition="all 0.2s ease"
+                      _hover={{ transform: 'translateY(-1px)' }}
+                      _active={{ transform: 'translateY(0)' }}
+                    >
+                      Hapus
+                    </Button>
                   </HStack>
                 </Box>
               ))}
@@ -348,6 +420,9 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
                   variant="outline"
                   onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                   disabled={pagination.page <= 1}
+                  transition="all 0.2s ease"
+                  _hover={{ transform: 'translateY(-1px)' }}
+                  _active={{ transform: 'translateY(0)' }}
                 >
                   Sebelumnya
                 </Button>
@@ -356,6 +431,9 @@ function ServiceList({ vehicles }: Readonly<ServiceListProps>) {
                   variant="outline"
                   onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
                   disabled={pagination.page >= pagination.totalPages}
+                  transition="all 0.2s ease"
+                  _hover={{ transform: 'translateY(-1px)' }}
+                  _active={{ transform: 'translateY(0)' }}
                 >
                   Berikutnya
                 </Button>

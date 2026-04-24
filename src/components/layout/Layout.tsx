@@ -1,8 +1,17 @@
 import type { ComponentType, ReactNode } from 'react';
-import { Box, Button, Container, Flex, Heading, HStack, Icon, Text } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Container,
+  Flex,
+  Heading,
+  HStack,
+  Icon,
+  Link as ChakraLink,
+  Text,
+} from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router';
-import { FiHome, FiTool, FiTruck, FiUser } from 'react-icons/fi';
-import { ColorModeButton } from '@/components/ui/color-mode';
+import { FiHome, FiSettings, FiTool, FiTruck, FiUser } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 import { APP_NAME, ROUTES } from '@/config/constants';
 
@@ -19,12 +28,30 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
     if (pathname.startsWith('/services')) return 'services';
     if (pathname.startsWith('/garage')) return 'garage';
     if (pathname.startsWith('/vehicles')) return 'garage';
+    if (pathname.startsWith('/settings')) return 'settings';
     if (pathname.startsWith('/profile')) return 'profile';
     return 'home';
   })();
 
   return (
     <Box minH="100vh" bg="bg">
+      <ChakraLink
+        href="#main-content"
+        position="absolute"
+        top="-40px"
+        left={4}
+        zIndex={30}
+        px={4}
+        py={2}
+        borderRadius="md"
+        bg="surface"
+        borderWidth="1px"
+        borderColor="border"
+        _focusVisible={{ top: 3 }}
+      >
+        Lewati ke konten utama
+      </ChakraLink>
+
       {/* Navbar (desktop) */}
       <Box
         as="nav"
@@ -45,8 +72,21 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
             <HStack gap={2} align="center">
               <DesktopNavItem label="Home" to={ROUTES.DASHBOARD} isActive={activeNav === 'home'} />
               <DesktopNavItem label="Garasi" to={ROUTES.GARAGE} isActive={activeNav === 'garage'} />
-              <DesktopNavItem label="Service" to={ROUTES.SERVICES} isActive={activeNav === 'services'} />
-              <DesktopNavItem label="Profil" to={ROUTES.PROFILE} isActive={activeNav === 'profile'} />
+              <DesktopNavItem
+                label="Service"
+                to={ROUTES.SERVICES}
+                isActive={activeNav === 'services'}
+              />
+              <DesktopNavItem
+                label="Profil"
+                to={ROUTES.PROFILE}
+                isActive={activeNav === 'profile'}
+              />
+              <DesktopNavItem
+                label="Pengaturan"
+                to={ROUTES.SETTINGS}
+                isActive={activeNav === 'settings'}
+              />
             </HStack>
             <HStack gap={3} align="center">
               {user && (
@@ -54,7 +94,6 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
                   Halo, {user.name}
                 </Text>
               )}
-              <ColorModeButton />
               {user && (
                 <Button onClick={() => logout()} size="sm" variant="ghost">
                   Logout
@@ -66,7 +105,13 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
       </Box>
 
       {/* Main content */}
-      <Box as="main" py={{ base: 6, md: 8 }} pb={{ base: 24, md: 8 }}>
+      <Box
+        as="main"
+        id="main-content"
+        tabIndex={-1}
+        py={{ base: 6, md: 8 }}
+        pb={{ base: 24, md: 8 }}
+      >
         {children}
       </Box>
 
@@ -109,8 +154,12 @@ export default function Layout({ children }: Readonly<LayoutProps>) {
               icon={FiUser}
               isActive={activeNav === 'profile'}
             />
-            
-            <ColorModeButton size="sm" />
+            <NavItem
+              label="Pengaturan"
+              to={ROUTES.SETTINGS}
+              icon={FiSettings}
+              isActive={activeNav === 'settings'}
+            />
           </Flex>
         </Container>
       </Box>

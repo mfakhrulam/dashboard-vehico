@@ -15,9 +15,19 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { Tooltip } from '@/components/ui/tooltip';
 import { Link as RouterLink, useNavigate } from 'react-router';
-import { FiActivity, FiBell, FiChevronDown, FiClock, FiDollarSign, FiPlus, FiTool, FiTruck } from 'react-icons/fi';
+import {
+  FiActivity,
+  FiBell,
+  FiChevronDown,
+  FiClock,
+  FiDollarSign,
+  FiPlus,
+  FiTool,
+  FiTruck,
+} from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useRecentServices } from '@/hooks/useServices';
@@ -28,6 +38,8 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import VehicleCard from '@/components/features/vehicles/VehicleCard';
 import QuickServiceModal from '@/components/features/services/QuickServiceModal';
 import Layout from '@/components/layout/Layout';
+import { vehicleService } from '@/services/vehicle.service';
+import type { MaintenanceItem } from '@/types/vehicle.types';
 
 interface StatsCardProps {
   title: string;
@@ -41,6 +53,12 @@ interface HealthMetric {
   value: number;
   status: 'ok' | 'warn' | 'danger';
 }
+
+const mapMaintenanceStatus = (status: MaintenanceItem['status']): HealthMetric['status'] => {
+  if (status === 'overdue') return 'danger';
+  if (status === 'warning') return 'warn';
+  return 'ok';
+};
 
 const statusColorMap: Record<HealthMetric['status'], string> = {
   ok: 'brand.solid',
@@ -66,7 +84,14 @@ function StatsCard({ title, value, helperText, icon }: Readonly<StatsCardProps>)
           </Text>
           <Heading size="lg">{value}</Heading>
         </Box>
-        <Box bg="brand.subtle" borderWidth="1px" borderColor="brand.emphasized" borderRadius="lg" p={2} color="brand.fg">
+        <Box
+          bg="brand.subtle"
+          borderWidth="1px"
+          borderColor="brand.emphasized"
+          borderRadius="lg"
+          p={2}
+          color="brand.fg"
+        >
           <Icon as={icon} boxSize={5} />
         </Box>
       </HStack>
@@ -100,20 +125,53 @@ export default function Dashboard() {
   const primaryVehicle = ownedVehicles[0] ?? sharedVehicles[0];
   const visibleVehicles = activeTab === 'owned' ? ownedVehicles : sharedVehicles;
 
+  const { data: maintenanceSchedule } = useQuery({
+    queryKey: ['vehicle-maintenance', primaryVehicle?.id],
+    queryFn: async () => {
+      const response = await vehicleService.getMaintenanceSchedule(primaryVehicle.id);
+      return response.data;
+    },
+    enabled: !!primaryVehicle,
+  });
+
   const healthMetrics: HealthMetric[] = useMemo(
-    () => [
-      { label: 'Oli Mesin', value: 75, status: 'warn' },
-      { label: 'Kampas Rem', value: 40, status: 'ok' },
-      { label: 'Ban Depan', value: 85, status: 'danger' },
-    ],
-    [],
+    () =>
+      (maintenanceSchedule?.items ?? []).slice(0, 3).map((item) => {
+        const rawProgress = Math.max(item.kmProgress ?? 0, item.monthProgress ?? 0);
+        return {
+          label: item.partName,
+          value: Math.min(Math.round(rawProgress), 100),
+          status: mapMaintenanceStatus(item.status),
+        };
+      }),
+    [maintenanceSchedule]
   );
+
+  const upcomingServices = useMemo(() => {
+    if (!maintenanceSchedule?.items?.length) return 0;
+
+    const now = new Date();
+    const dueThreshold = new Date(now);
+    dueThreshold.setDate(dueThreshold.getDate() + 30);
+
+    return maintenanceSchedule.items.filter((item) => {
+      if (!item.nextDueDate) return false;
+      const dueDate = new Date(item.nextDueDate);
+      return dueDate >= now && dueDate <= dueThreshold;
+    }).length;
+  }, [maintenanceSchedule]);
 
   return (
     <Layout>
       <Container maxW="7xl">
         <VStack gap={8} align="stretch">
-          <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={{ base: 5, md: 6 }}>
+          <Box
+            bg="surface"
+            borderWidth="1px"
+            borderColor="border"
+            borderRadius="xl"
+            p={{ base: 5, md: 6 }}
+          >
             <SimpleGrid columns={{ base: 1, lg: 2 }} gap={6} alignItems="stretch">
               <Stack gap={4} justify="space-between">
                 <HStack gap={3}>
@@ -140,7 +198,8 @@ export default function Dashboard() {
                 </HStack>
 
                 <Text color="textMuted" maxW="lg">
-                  Pantau kesehatan kendaraan dan catat servis terbaru. Semua catatan tersimpan rapi untuk Anda dan tim.
+                  Pantau kesehatan kendaraan dan catat servis terbaru. Semua catatan tersimpan rapi
+                  untuk Anda dan tim.
                 </Text>
 
                 <HStack gap={3} flexWrap="wrap" align="center">
@@ -164,15 +223,32 @@ export default function Dashboard() {
                 </HStack>
               </Stack>
 
-              <Box bg="bg" borderWidth="1px" borderColor="border" borderRadius="xl" p={4} display="flex" flexDirection="column" gap={4}>
+              <Box
+                bg="bg"
+                borderWidth="1px"
+                borderColor="border"
+                borderRadius="xl"
+                p={4}
+                display="flex"
+                flexDirection="column"
+                gap={4}
+              >
                 <Box
                   borderRadius="lg"
                   overflow="hidden"
                   h={{ base: '160px', md: '190px' }}
-                  backgroundImage={primaryVehicle?.photoUrl ? `url(${primaryVehicle.photoUrl})` : undefined}
+                  backgroundImage={
+                    primaryVehicle?.photoUrl ? `url(${primaryVehicle.photoUrl})` : undefined
+                  }
                   backgroundSize="cover"
                   backgroundPosition="center"
                   bg={primaryVehicle?.photoUrl ? undefined : 'brand.muted'}
+                  role="img"
+                  aria-label={
+                    primaryVehicle
+                      ? `Foto kendaraan aktif ${primaryVehicle.name}`
+                      : 'Ilustrasi kendaraan aktif'
+                  }
                 >
                   {!primaryVehicle?.photoUrl && (
                     <Flex h="full" align="center" justify="center">
@@ -190,7 +266,9 @@ export default function Dashboard() {
                       {primaryVehicle ? primaryVehicle.name : 'Belum ada kendaraan'}
                     </Heading>
                     <Text fontSize="sm" color="textMuted">
-                      {primaryVehicle ? `${primaryVehicle.brand} ${primaryVehicle.model}` : 'Tambahkan kendaraan untuk mulai.'}
+                      {primaryVehicle
+                        ? `${primaryVehicle.brand} ${primaryVehicle.model}`
+                        : 'Tambahkan kendaraan untuk mulai.'}
                     </Text>
                   </Box>
                   {primaryVehicle && (
@@ -208,7 +286,9 @@ export default function Dashboard() {
                       <Text fontSize="xs" color="textMuted">
                         Odometer
                       </Text>
-                      <Text fontWeight="semibold">{formatOdometer(primaryVehicle.currentOdometer)}</Text>
+                      <Text fontWeight="semibold">
+                        {formatOdometer(primaryVehicle.currentOdometer)}
+                      </Text>
                     </Box>
                     {primaryVehicle.licensePlate && (
                       <Box>
@@ -225,10 +305,30 @@ export default function Dashboard() {
           </Box>
 
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4}>
-            <StatsCard title="Total Kendaraan" value={`${totalVehicles}`} helperText="Termasuk kendaraan dibagikan" icon={FiTruck} />
-            <StatsCard title="Total Service" value={`${totalServicesThisMonth}`} helperText="Service bulan ini" icon={FiActivity} />
-            <StatsCard title="Service Mendatang" value="0" helperText="Dalam 30 hari" icon={FiClock} />
-            <StatsCard title="Total Biaya" value={formatCurrency(totalCostThisMonth)} helperText="Pengeluaran bulan ini" icon={FiDollarSign} />
+            <StatsCard
+              title="Total Kendaraan"
+              value={`${totalVehicles}`}
+              helperText="Termasuk kendaraan dibagikan"
+              icon={FiTruck}
+            />
+            <StatsCard
+              title="Total Service"
+              value={`${totalServicesThisMonth}`}
+              helperText="Service bulan ini"
+              icon={FiActivity}
+            />
+            <StatsCard
+              title="Service Mendatang"
+              value={`${upcomingServices}`}
+              helperText="Dalam 30 hari"
+              icon={FiClock}
+            />
+            <StatsCard
+              title="Total Biaya"
+              value={formatCurrency(totalCostThisMonth)}
+              helperText="Pengeluaran bulan ini"
+              icon={FiDollarSign}
+            />
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, lg: 3 }} gap={6}>
@@ -252,19 +352,27 @@ export default function Dashboard() {
                     </Box>
                   </Box>
                 ))}
-                <Text fontSize="xs" color="textMuted">
-                  TODO: Hubungkan dengan jadwal perawatan aktual.
-                </Text>
+                {healthMetrics.length === 0 && (
+                  <Text fontSize="sm" color="textMuted">
+                    Belum ada data jadwal perawatan untuk kendaraan aktif.
+                  </Text>
+                )}
               </VStack>
             </Box>
-
           </SimpleGrid>
 
           <Box>
-            <Flex justify="space-between" align={{ base: 'start', md: 'center' }} mb={4} direction={{ base: 'column', md: 'row' }} gap={4}>
+            <Flex
+              justify="space-between"
+              align={{ base: 'start', md: 'center' }}
+              mb={4}
+              direction={{ base: 'column', md: 'row' }}
+              gap={4}
+            >
               <Heading size="lg">Garasi Anda</Heading>
               <HStack gap={2} role="tablist" aria-label="Tabs kendaraan">
                 <Button
+                  id="dashboard-vehicles-tab-owned"
                   size="md"
                   h="48px"
                   variant={activeTab === 'owned' ? 'solid' : 'outline'}
@@ -272,6 +380,7 @@ export default function Dashboard() {
                   onClick={() => setActiveTab('owned')}
                   role="tab"
                   aria-selected={activeTab === 'owned'}
+                  aria-controls="dashboard-vehicles-panel"
                 >
                   Kendaraan Saya
                   <Badge ml={2} colorPalette="brand">
@@ -279,6 +388,7 @@ export default function Dashboard() {
                   </Badge>
                 </Button>
                 <Button
+                  id="dashboard-vehicles-tab-shared"
                   size="md"
                   h="48px"
                   variant={activeTab === 'shared' ? 'solid' : 'outline'}
@@ -286,6 +396,7 @@ export default function Dashboard() {
                   onClick={() => setActiveTab('shared')}
                   role="tab"
                   aria-selected={activeTab === 'shared'}
+                  aria-controls="dashboard-vehicles-panel"
                 >
                   Dibagikan ke Saya
                   <Badge ml={2} colorPalette="gray">
@@ -295,28 +406,45 @@ export default function Dashboard() {
               </HStack>
             </Flex>
 
-            {isLoading && <LoadingSpinner label="Memuat data kendaraan..." />}
+            <Box
+              id="dashboard-vehicles-panel"
+              role="tabpanel"
+              aria-labelledby={
+                activeTab === 'owned'
+                  ? 'dashboard-vehicles-tab-owned'
+                  : 'dashboard-vehicles-tab-shared'
+              }
+              pt={1}
+            >
+              {isLoading && <LoadingSpinner label="Memuat data kendaraan..." />}
 
-            {!isLoading && ownedVehicles.length === 0 && sharedVehicles.length === 0 && (
-              <EmptyState
-                title="Belum ada kendaraan"
-                description="Tambahkan kendaraan pertama Anda untuk mulai mencatat service."
-                actionLabel="Tambah Kendaraan"
-                onAction={() => navigate(ROUTES.VEHICLE_CREATE)}
-              />
-            )}
+              {!isLoading && ownedVehicles.length === 0 && sharedVehicles.length === 0 && (
+                <EmptyState
+                  title="Belum ada kendaraan"
+                  description="Tambahkan kendaraan pertama Anda untuk mulai mencatat service."
+                  actionLabel="Tambah Kendaraan"
+                  onAction={() => navigate(ROUTES.VEHICLE_CREATE)}
+                />
+              )}
 
-            {!isLoading && totalVehicles > 0 && (
-              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
-                {visibleVehicles.map((vehicle) => (
-                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
-                ))}
-              </SimpleGrid>
-            )}
+              {!isLoading && totalVehicles > 0 && (
+                <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
+                  {visibleVehicles.map((vehicle) => (
+                    <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                  ))}
+                </SimpleGrid>
+              )}
+            </Box>
           </Box>
 
           <Box bg="surface" borderWidth="1px" borderColor="border" borderRadius="xl" p={6}>
-            <Flex justify="space-between" align={{ base: 'start', md: 'center' }} mb={4} direction={{ base: 'column', md: 'row' }} gap={2}>
+            <Flex
+              justify="space-between"
+              align={{ base: 'start', md: 'center' }}
+              mb={4}
+              direction={{ base: 'column', md: 'row' }}
+              gap={2}
+            >
               <Heading size="md">Service Terbaru</Heading>
               <RouterLink to={ROUTES.SERVICES}>
                 <Button variant="ghost" size="sm">
@@ -326,9 +454,16 @@ export default function Dashboard() {
             </Flex>
             <Stack gap={4}>
               {isLoadingServices && <LoadingSpinner label="Memuat service terbaru..." />}
-              
+
               {!isLoadingServices && recentServices.length === 0 && (
-                <Box textAlign="center" py={8} borderWidth="1px" borderColor="border" borderRadius="lg" bg="bg">
+                <Box
+                  textAlign="center"
+                  py={8}
+                  borderWidth="1px"
+                  borderColor="border"
+                  borderRadius="lg"
+                  bg="bg"
+                >
                   <Text color="textMuted" mb={4}>
                     Belum ada service terbaru.
                   </Text>
@@ -357,17 +492,13 @@ export default function Dashboard() {
                       borderColor="border"
                     >
                       <HStack gap={3}>
-                        <Box
-                          bg="brand.subtle"
-                          borderRadius="lg"
-                          p={2}
-                          color="brand.fg"
-                        >
+                        <Box bg="brand.subtle" borderRadius="lg" p={2} color="brand.fg">
                           <Icon as={FiTool} boxSize={5} />
                         </Box>
                         <Box>
                           <Text fontWeight="medium">
-                            {SERVICE_TYPES[service.serviceType as keyof typeof SERVICE_TYPES] || service.serviceType}
+                            {SERVICE_TYPES[service.serviceType as keyof typeof SERVICE_TYPES] ||
+                              service.serviceType}
                           </Text>
                           <Text fontSize="sm" color="textMuted">
                             {service.vehicleName} • {formatDate(service.serviceDate)}
@@ -411,10 +542,7 @@ export default function Dashboard() {
         </IconButton>
       </Tooltip>
 
-      <QuickServiceModal
-        isOpen={isQuickServiceOpen}
-        onClose={() => setIsQuickServiceOpen(false)}
-      />
+      <QuickServiceModal isOpen={isQuickServiceOpen} onClose={() => setIsQuickServiceOpen(false)} />
     </Layout>
   );
 }

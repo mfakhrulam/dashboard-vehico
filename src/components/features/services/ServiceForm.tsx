@@ -1,30 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
+  Combobox,
+  createListCollection,
   HStack,
   Input,
+  Portal,
+  Select,
   Stack,
   Text,
   Textarea,
-  VStack,
-  Select,
-  Portal,
-  createListCollection,
-  Combobox,
   useFilter,
   useListCollection,
+  VStack,
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { SERVICE_TYPES } from '@/config/constants';
 import { Field } from '@/components/ui/field';
+import { useAllServices } from '@/hooks/useServices';
 import { partsService } from '@/services/parts.service';
-import type { FormErrors } from '@/utils/error';
-import type { PartReplaced, CreateServiceRequest } from '@/types/service.types';
-import type { ServiceType } from '@/types/common.types';
 import type { PartResponse } from '@/types/parts.types';
+import type { ServiceType } from '@/types/common.types';
+import type { PartReplaced, CreateServiceRequest } from '@/types/service.types';
+import type { FormErrors } from '@/utils/error';
 
 interface ServiceFormValues {
   serviceDate: string;
@@ -44,6 +45,7 @@ interface ServiceFormProps {
   submitLabel?: string;
   onSubmit: (payload: CreateServiceRequest) => void;
   onCancel?: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 const serviceSchema = z.object({
@@ -80,12 +82,15 @@ export default function ServiceForm({
   submitLabel = 'Simpan Service',
   onSubmit,
   onCancel,
+  onDirtyChange,
 }: Readonly<ServiceFormProps>) {
   const [partsReplaced, setPartsReplaced] = useState<PartReplaced[]>(initialParts ?? []);
   const [partName, setPartName] = useState('');
   const [partBrand, setPartBrand] = useState('');
   const [partQuantity, setPartQuantity] = useState('1');
   const [receiptPhoto, setReceiptPhoto] = useState<File | undefined>(undefined);
+
+  const { services: serviceHistory } = useAllServices(1, 100);
 
   // Fetch parts catalog (returns flat array of all parts)
   const { data: partsCatalog = [] } = useQuery({
@@ -95,18 +100,41 @@ export default function ServiceForm({
 
   // Setup combobox filter
   const { contains } = useFilter({ sensitivity: 'base' });
-  const partsItems = useMemo(() => 
-    partsCatalog.map((p: PartResponse) => ({ label: p.partName, value: p.partName })),
+  const partsItems = useMemo(
+    () => partsCatalog.map((p: PartResponse) => ({ label: p.partName, value: p.partName })),
     [partsCatalog]
   );
-  const { collection: partsCollection, filter: filterParts, set: setPartsCollection } = useListCollection({
+  const {
+    collection: partsCollection,
+    filter: filterParts,
+    set: setPartsCollection,
+  } = useListCollection({
     initialItems: partsItems,
     filter: contains,
   });
 
-  useEffect(() => {
-    setPartsCollection(partsItems);
-  }, [partsItems, setPartsCollection]);
+  const workshopItems = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          serviceHistory
+            .map((service) => service.workshopName?.trim())
+            .filter((name): name is string => Boolean(name))
+        )
+      )
+        .sort((a, b) => a.localeCompare(b, 'id-ID'))
+        .map((name) => ({ label: name, value: name })),
+    [serviceHistory]
+  );
+
+  const {
+    collection: workshopsCollection,
+    filter: filterWorkshops,
+    set: setWorkshopsCollection,
+  } = useListCollection({
+    initialItems: workshopItems,
+    filter: contains,
+  });
 
   const defaultServiceDate = useMemo(() => {
     if (initialValues?.serviceDate) {
@@ -115,15 +143,34 @@ export default function ServiceForm({
     return new Date().toISOString().slice(0, 10);
   }, [initialValues]);
 
-  const form = useForm({
-    defaultValues: {
+  const initialFormValues = useMemo(
+    () => ({
       serviceDate: defaultServiceDate,
       odometer: initialValues?.odometer ?? '',
       serviceType: initialValues?.serviceType ?? 'rutin',
       cost: initialValues?.cost ?? '',
       workshopName: initialValues?.workshopName ?? '',
       notes: initialValues?.notes ?? '',
-    },
+    }),
+    [defaultServiceDate, initialValues]
+  );
+
+  const initialValuesSnapshot = useMemo(
+    () => JSON.stringify(initialFormValues),
+    [initialFormValues]
+  );
+  const initialPartsSnapshot = useMemo(() => JSON.stringify(initialParts ?? []), [initialParts]);
+
+  useEffect(() => {
+    setPartsCollection(partsItems);
+  }, [partsItems, setPartsCollection]);
+
+  useEffect(() => {
+    setWorkshopsCollection(workshopItems);
+  }, [setWorkshopsCollection, workshopItems]);
+
+  const form = useForm({
+    defaultValues: initialFormValues,
     onSubmit: async ({ value }) => {
       const payload: CreateServiceRequest = {
         vehicleId,
@@ -151,28 +198,73 @@ export default function ServiceForm({
     },
   });
 
+  const updateDirtyState = ({
+    nextValues = {},
+    nextParts = partsReplaced,
+    nextReceiptPhoto = receiptPhoto,
+    nextPartName = partName,
+    nextPartBrand = partBrand,
+    nextPartQuantity = partQuantity,
+  }: {
+    nextValues?: Partial<ServiceFormValues>;
+    nextParts?: PartReplaced[];
+    nextReceiptPhoto?: File;
+    nextPartName?: string;
+    nextPartBrand?: string;
+    nextPartQuantity?: string;
+  } = {}) => {
+    const currentValues: ServiceFormValues = {
+      serviceDate: nextValues.serviceDate ?? form.getFieldValue('serviceDate') ?? '',
+      odometer: nextValues.odometer ?? form.getFieldValue('odometer') ?? '',
+      serviceType: (nextValues.serviceType ??
+        form.getFieldValue('serviceType') ??
+        'rutin') as ServiceType,
+      cost: nextValues.cost ?? form.getFieldValue('cost') ?? '',
+      workshopName: nextValues.workshopName ?? form.getFieldValue('workshopName') ?? '',
+      notes: nextValues.notes ?? form.getFieldValue('notes') ?? '',
+    };
+
+    const hasValueChanges = JSON.stringify(currentValues) !== initialValuesSnapshot;
+    const hasPartsChanges = JSON.stringify(nextParts) !== initialPartsSnapshot;
+    const hasPendingPartDraft = Boolean(
+      nextPartName.trim() || nextPartBrand.trim() || nextPartQuantity !== '1'
+    );
+
+    onDirtyChange?.(
+      hasValueChanges || hasPartsChanges || Boolean(nextReceiptPhoto) || hasPendingPartDraft
+    );
+  };
+
   const addPart = () => {
     if (!partName.trim()) return;
-    setPartsReplaced((prev) => [
-      ...prev,
+
+    const nextParts = [
+      ...partsReplaced,
       {
         name: partName.trim(),
         brand: partBrand.trim() || undefined,
         quantity: partQuantity ? Number.parseInt(partQuantity, 10) : undefined,
       },
-    ]);
+    ];
+
+    setPartsReplaced(nextParts);
     setPartName('');
     setPartBrand('');
     setPartQuantity('1');
+    updateDirtyState({ nextParts, nextPartName: '', nextPartBrand: '', nextPartQuantity: '1' });
   };
 
   const removePart = (index: number) => {
-    setPartsReplaced((prev) => prev.filter((_, idx) => idx !== index));
+    const nextParts = partsReplaced.filter((_, idx) => idx !== index);
+    setPartsReplaced(nextParts);
+    updateDirtyState({ nextParts });
   };
 
   const applyPreset = (preset: 'oil' | 'tire', type: ServiceType) => {
-    setPartsReplaced(presetParts[preset]);
+    const nextParts = presetParts[preset];
+    setPartsReplaced(nextParts);
     form.setFieldValue('serviceType', type);
+    updateDirtyState({ nextValues: { serviceType: type }, nextParts });
   };
 
   return (
@@ -194,7 +286,14 @@ export default function ServiceForm({
             <Button variant="outline" size="sm" onClick={() => applyPreset('tire', 'perbaikan')}>
               Ganti Ban
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setPartsReplaced([])}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setPartsReplaced([]);
+                updateDirtyState({ nextParts: [] });
+              }}
+            >
               Reset
             </Button>
           </HStack>
@@ -238,7 +337,11 @@ export default function ServiceForm({
                 type="date"
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  field.handleChange(value);
+                  updateDirtyState({ nextValues: { serviceDate: value } });
+                }}
                 size="lg"
               />
             </Field>
@@ -268,7 +371,11 @@ export default function ServiceForm({
                 type="number"
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  field.handleChange(value);
+                  updateDirtyState({ nextValues: { odometer: value } });
+                }}
                 placeholder="e.g., 25000"
                 size="lg"
               />
@@ -295,11 +402,16 @@ export default function ServiceForm({
               invalid={!!field.state.meta.errors.length}
               errorText={field.state.meta.errors[0]}
             >
-              <Select.Root 
+              <Select.Root
                 size="lg"
                 collection={serviceTypeOptions}
                 value={[field.state.value]}
-                onValueChange={(e) => field.handleChange(e.value[0] as ServiceType)}
+                onValueChange={(event) => {
+                  const value = event.value[0] as ServiceType | undefined;
+                  if (!value) return;
+                  field.handleChange(value);
+                  updateDirtyState({ nextValues: { serviceType: value } });
+                }}
                 onInteractOutside={() => field.handleBlur()}
               >
                 <Select.HiddenSelect />
@@ -337,21 +449,24 @@ export default function ServiceForm({
               <Box flex="1" minW="200px">
                 <Combobox.Root
                   collection={partsCollection}
-                  onInputValueChange={(e) => {
-                    setPartName(e.inputValue);
-                    filterParts(e.inputValue);
+                  onInputValueChange={(event) => {
+                    setPartName(event.inputValue);
+                    filterParts(event.inputValue);
+                    updateDirtyState({ nextPartName: event.inputValue });
                   }}
-                  onValueChange={(e) => {
-                    if (e.value[0]) {
-                      setPartName(e.value[0]);
-                    }
+                  onValueChange={(event) => {
+                    if (!event.value[0]) return;
+                    setPartName(event.value[0]);
+                    updateDirtyState({ nextPartName: event.value[0] });
                   }}
                   inputValue={partName}
                   allowCustomValue
                   selectionBehavior="replace"
                   openOnClick
                 >
-                  <Combobox.Label fontSize="sm" color="textMuted">Nama Part</Combobox.Label>
+                  <Combobox.Label fontSize="sm" color="textMuted">
+                    Nama Part
+                  </Combobox.Label>
                   <Combobox.Control>
                     <Combobox.Input placeholder="Cari atau ketik nama part" />
                     <Combobox.IndicatorGroup>
@@ -376,14 +491,22 @@ export default function ServiceForm({
               </Box>
               <Input
                 value={partBrand}
-                onChange={(event) => setPartBrand(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setPartBrand(value);
+                  updateDirtyState({ nextPartBrand: value });
+                }}
                 placeholder="Brand"
                 size="md"
                 maxW="150px"
               />
               <Input
                 value={partQuantity}
-                onChange={(event) => setPartQuantity(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setPartQuantity(value);
+                  updateDirtyState({ nextPartQuantity: value });
+                }}
                 placeholder="Qty"
                 type="number"
                 size="md"
@@ -427,7 +550,11 @@ export default function ServiceForm({
                 type="number"
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  field.handleChange(value);
+                  updateDirtyState({ nextValues: { cost: value } });
+                }}
                 placeholder="e.g., 350000"
                 size="lg"
               />
@@ -438,13 +565,46 @@ export default function ServiceForm({
         <form.Field name="workshopName">
           {(field) => (
             <Field label="Nama Bengkel" optionalText="(opsional)">
-              <Input
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-                placeholder="e.g., Bengkel Jaya"
-                size="lg"
-              />
+              <Combobox.Root
+                collection={workshopsCollection}
+                inputValue={field.state.value}
+                allowCustomValue
+                selectionBehavior="replace"
+                openOnClick
+                onInputValueChange={(event) => {
+                  field.handleChange(event.inputValue);
+                  filterWorkshops(event.inputValue);
+                  updateDirtyState({ nextValues: { workshopName: event.inputValue } });
+                }}
+                onValueChange={(event) => {
+                  if (!event.value[0]) return;
+                  field.handleChange(event.value[0]);
+                  updateDirtyState({ nextValues: { workshopName: event.value[0] } });
+                }}
+              >
+                <Combobox.Control>
+                  <Combobox.Input placeholder="e.g., Bengkel Jaya" onBlur={field.handleBlur} />
+                  <Combobox.IndicatorGroup>
+                    <Combobox.ClearTrigger />
+                    <Combobox.Trigger />
+                  </Combobox.IndicatorGroup>
+                </Combobox.Control>
+                <Portal>
+                  <Combobox.Positioner>
+                    <Combobox.Content>
+                      <Combobox.Empty>
+                        Tidak ada saran - lanjutkan mengetik nama bengkel
+                      </Combobox.Empty>
+                      {workshopsCollection.items.map((item) => (
+                        <Combobox.Item item={item} key={item.value}>
+                          {item.label}
+                          <Combobox.ItemIndicator />
+                        </Combobox.Item>
+                      ))}
+                    </Combobox.Content>
+                  </Combobox.Positioner>
+                </Portal>
+              </Combobox.Root>
             </Field>
           )}
         </form.Field>
@@ -455,7 +615,11 @@ export default function ServiceForm({
               <Textarea
                 value={field.state.value}
                 onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  field.handleChange(value);
+                  updateDirtyState({ nextValues: { notes: value } });
+                }}
                 placeholder="Tambahkan catatan service"
                 minH="120px"
               />
@@ -467,7 +631,11 @@ export default function ServiceForm({
           <Input
             type="file"
             accept="image/*"
-            onChange={(event) => setReceiptPhoto(event.target.files?.[0])}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              setReceiptPhoto(file);
+              updateDirtyState({ nextReceiptPhoto: file });
+            }}
             size="lg"
           />
         </Field>

@@ -23,6 +23,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import ServiceForm from '@/components/features/services/ServiceForm';
 import { toaster } from '@/components/ui/toaster';
 import type { CreateServiceRequest } from '@/types/service.types';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 export default function ServiceCreate() {
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ export default function ServiceCreate() {
   const { ownedVehicles, sharedVehicles, isLoading } = useVehicles();
   const [selectedVehicleId, setSelectedVehicleId] = useState<number>(0);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const { allowNavigation, confirmDiscard } = useUnsavedChanges({ isDirty: isFormDirty });
 
   const vehicles = useMemo(
     () => [...ownedVehicles, ...sharedVehicles],
@@ -54,6 +57,7 @@ export default function ServiceCreate() {
         description: 'Catatan service berhasil ditambahkan',
         type: 'success',
       });
+      allowNavigation();
       if (activeVehicleId) {
         navigate(ROUTES.VEHICLE_DETAIL(activeVehicleId));
         return;
@@ -170,7 +174,8 @@ export default function ServiceCreate() {
                 isSubmitting={createMutation.isPending}
                 submitLabel="Simpan Service"
                 onSubmit={(payload) => createMutation.mutate(payload)}
-                onCancel={() => navigate(ROUTES.DASHBOARD)}
+                onCancel={() => confirmDiscard(() => navigate(ROUTES.DASHBOARD))}
+                onDirtyChange={setIsFormDirty}
               />
             ) : (
               <HStack justify="center">

@@ -13,6 +13,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import EmptyState from '@/components/common/EmptyState';
 import { VehicleForm, VehicleFormValues } from '@/components/features/vehicles/VehicleForm';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 export default function VehicleEdit() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function VehicleEdit() {
 
   const { vehicle, isLoading, error } = useVehicle(vehicleId);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isFormDirty, setIsFormDirty] = useState(false);
+  const { allowNavigation, confirmDiscard } = useUnsavedChanges({ isDirty: isFormDirty });
 
   // Mutation for update vehicle
   const updateMutation = useMutation({
@@ -36,6 +39,7 @@ export default function VehicleEdit() {
         description: 'Kendaraan berhasil diperbarui',
         type: 'success',
       });
+      allowNavigation();
       navigate(ROUTES.VEHICLE_DETAIL(vehicleId));
     },
     onError: (error) => {
@@ -64,7 +68,7 @@ export default function VehicleEdit() {
   };
 
   const handleCancel = () => {
-    navigate(ROUTES.VEHICLE_DETAIL(vehicleId));
+    confirmDiscard(() => navigate(ROUTES.VEHICLE_DETAIL(vehicleId)));
   };
 
   if (isLoading) {
@@ -114,6 +118,7 @@ export default function VehicleEdit() {
             isSubmitting={updateMutation.isPending}
             formErrors={formErrors}
             requirePhoto={false}
+            onDirtyChange={setIsFormDirty}
           />
         </VStack>
       </Container>

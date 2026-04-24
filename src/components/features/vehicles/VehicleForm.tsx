@@ -1,7 +1,7 @@
 import { VStack, Input, Button, Alert, Text, Image, Box, HStack } from '@chakra-ui/react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Field } from '@/components/ui/field';
 import { FormErrors } from '@/utils/error';
 import type { VehicleResponse } from '@/types/vehicle.types';
@@ -35,6 +35,7 @@ interface VehicleFormProps {
   isSubmitting: boolean;
   formErrors?: FormErrors;
   requirePhoto?: boolean;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 const getZodMessage = (error: unknown, fallback: string) => {
@@ -107,20 +108,34 @@ export const VehicleForm = ({
   isSubmitting,
   formErrors = {},
   requirePhoto = true,
+  onDirtyChange,
 }: VehicleFormProps) => {
   const [photoError, setPhotoError] = useState<string>('');
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     initialData?.photoUrl || null
   );
 
-  const form = useForm({
-    defaultValues: {
+  const initialFormValues = useMemo(
+    () => ({
       name: initialData?.name || '',
       brand: initialData?.brand || '',
       model: initialData?.model || '',
       year: initialData?.year?.toString() || new Date().getFullYear().toString(),
       licensePlate: initialData?.licensePlate || '',
       currentOdometer: initialData?.currentOdometer?.toString() || '0',
+    }),
+    [initialData]
+  );
+
+  const initialValuesSnapshot = useMemo(
+    () => JSON.stringify(initialFormValues),
+    [initialFormValues]
+  );
+
+  const form = useForm({
+    defaultValues: {
+      ...initialFormValues,
     },
     onSubmit: async ({ value }) => {
       // Validate photo for create mode
@@ -141,9 +156,29 @@ export const VehicleForm = ({
     },
   });
 
+  const updateDirtyState = (
+    nextValues: Partial<Pick<VehicleFormValues, 'name' | 'brand' | 'model' | 'year' | 'licensePlate' | 'currentOdometer'>> = {},
+    nextPhoto: File | null = selectedPhoto
+  ) => {
+    const currentValues = {
+      name: nextValues.name ?? form.getFieldValue('name') ?? '',
+      brand: nextValues.brand ?? form.getFieldValue('brand') ?? '',
+      model: nextValues.model ?? form.getFieldValue('model') ?? '',
+      year: nextValues.year ?? form.getFieldValue('year') ?? '',
+      licensePlate: nextValues.licensePlate ?? form.getFieldValue('licensePlate') ?? '',
+      currentOdometer: nextValues.currentOdometer ?? form.getFieldValue('currentOdometer') ?? '',
+    };
+
+    const hasValueChanges = JSON.stringify(currentValues) !== initialValuesSnapshot;
+    onDirtyChange?.(hasValueChanges || Boolean(nextPhoto));
+  };
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhotoError('');
     const file = e.target.files?.[0];
+    const nextPhoto = file || null;
+    setSelectedPhoto(nextPhoto);
+    updateDirtyState({}, nextPhoto);
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -219,7 +254,11 @@ export const VehicleForm = ({
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.handleChange(value);
+                    updateDirtyState({ name: value });
+                  }}
                   placeholder="e.g., Mobil Pribadi"
                   size="lg"
                 />
@@ -250,7 +289,11 @@ export const VehicleForm = ({
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.handleChange(value);
+                    updateDirtyState({ brand: value });
+                  }}
                   placeholder="e.g., Toyota"
                   size="lg"
                 />
@@ -281,7 +324,11 @@ export const VehicleForm = ({
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.handleChange(value);
+                    updateDirtyState({ model: value });
+                  }}
                   placeholder="e.g., Avanza"
                   size="lg"
                 />
@@ -312,7 +359,11 @@ export const VehicleForm = ({
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.handleChange(value);
+                    updateDirtyState({ year: value });
+                  }}
                   placeholder="e.g., 2020"
                   type="number"
                   size="lg"
@@ -344,7 +395,11 @@ export const VehicleForm = ({
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase();
+                    field.handleChange(value);
+                    updateDirtyState({ licensePlate: value });
+                  }}
                   placeholder="e.g., B 1234 ABC"
                   size="lg"
                 />
@@ -375,7 +430,11 @@ export const VehicleForm = ({
                   name={field.name}
                   value={field.state.value}
                   onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.handleChange(value);
+                    updateDirtyState({ currentOdometer: value });
+                  }}
                   placeholder="e.g., 25000"
                   type="number"
                   size="lg"
