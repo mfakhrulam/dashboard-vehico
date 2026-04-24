@@ -32,6 +32,8 @@ export default function VehicleCard({ vehicle }: Readonly<VehicleCardProps>) {
             backgroundImage={`url(${vehicle.photoUrl})`}
             backgroundSize="cover"
             backgroundPosition="center"
+            role="img"
+            aria-label={`Foto kendaraan ${vehicle.name}`}
           />
         ) : (
           <Box
@@ -44,6 +46,8 @@ export default function VehicleCard({ vehicle }: Readonly<VehicleCardProps>) {
             display="flex"
             alignItems="center"
             justifyContent="center"
+            role="img"
+            aria-label={`Foto kendaraan ${vehicle.name} belum tersedia`}
           >
             <Text fontSize="sm" color="textMuted">
               Foto kendaraan belum tersedia

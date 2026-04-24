@@ -1,11 +1,13 @@
 import { Badge, Box, Button, Container, Heading, HStack, Input, SimpleGrid, Text, VStack } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from '@tanstack/react-form';
+import { useState } from 'react';
 import { z } from 'zod';
 import { FiArrowRight, FiShield, FiUser } from 'react-icons/fi';
 import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/auth.service';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { toaster } from '@/components/ui/toaster';
 import { parseApiError } from '@/utils/error';
 import { Field } from '@/components/ui/field';
@@ -34,6 +36,7 @@ const validateField = (schema: z.ZodType, value: unknown): string | undefined =>
 
 export default function Profile() {
   const { user, profile } = useAuth();
+  const [isPasswordFormDirty, setIsPasswordFormDirty] = useState(false);
 
   const changePasswordMutation = useMutation({
     mutationFn: authService.changePassword,
@@ -44,6 +47,7 @@ export default function Profile() {
         type: 'success',
       });
       form.reset();
+      setIsPasswordFormDirty(false);
     },
     onError: (error) => {
       const { message } = parseApiError(error);
@@ -68,6 +72,20 @@ export default function Profile() {
       });
     },
   });
+
+  const updateDirtyState = (nextValues: {
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }) => {
+    const currentPassword = nextValues.currentPassword ?? form.getFieldValue('currentPassword') ?? '';
+    const newPassword = nextValues.newPassword ?? form.getFieldValue('newPassword') ?? '';
+    const confirmPassword = nextValues.confirmPassword ?? form.getFieldValue('confirmPassword') ?? '';
+
+    setIsPasswordFormDirty(Boolean(currentPassword || newPassword || confirmPassword));
+  };
+
+  useUnsavedChanges({ isDirty: isPasswordFormDirty });
 
   return (
     <Layout>
@@ -213,7 +231,11 @@ export default function Profile() {
                             size="lg"
                             value={field.state.value}
                             onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.handleChange(value);
+                              updateDirtyState({ currentPassword: value });
+                            }}
                             placeholder="Masukkan password saat ini"
                           />
                         </Field>
@@ -238,7 +260,11 @@ export default function Profile() {
                             size="lg"
                             value={field.state.value}
                             onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.handleChange(value);
+                              updateDirtyState({ newPassword: value });
+                            }}
                             placeholder="Masukkan password baru"
                           />
                         </Field>
@@ -270,7 +296,11 @@ export default function Profile() {
                             size="lg"
                             value={field.state.value}
                             onBlur={field.handleBlur}
-                            onChange={(e) => field.handleChange(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.handleChange(value);
+                              updateDirtyState({ confirmPassword: value });
+                            }}
                             placeholder="Ulangi password baru"
                           />
                         </Field>

@@ -13,6 +13,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import ShareVehicleModal from '@/components/features/vehicles/ShareVehicleModal';
 import ServiceTimeline from '@/components/features/services/ServiceTimeline';
 import MaintenanceSchedule from '@/components/features/vehicles/MaintenanceSchedule';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { vehicleService } from '@/services/vehicle.service';
 import { toaster } from '@/components/ui/toaster';
 import { parseApiError } from '@/utils/error';
@@ -65,7 +66,7 @@ export default function VehicleDetail() {
     <Layout>
       <Container maxW="7xl">
         <VStack gap={8} align="stretch">
-          {isLoadingVehicle && <Text>Loading...</Text>}
+          {isLoadingVehicle && <LoadingSpinner label="Memuat detail kendaraan..." />}
 
           {vehicle && (
             <>
@@ -90,6 +91,12 @@ export default function VehicleDetail() {
                     bg={vehicle.photoUrl ? undefined : 'bg'}
                     borderWidth="1px"
                     borderColor="border"
+                    role="img"
+                    aria-label={
+                      vehicle.photoUrl
+                        ? `Foto kendaraan ${vehicle.name}`
+                        : `Foto kendaraan ${vehicle.name} belum tersedia`
+                    }
                   >
                     {!vehicle.photoUrl && (
                       <Flex h="full" align="center" justify="center">
@@ -208,7 +215,7 @@ export default function VehicleDetail() {
                       </Text>
                     </Flex>
 
-                    {isLoadingServices && <Text>Loading...</Text>}
+                    {isLoadingServices && <LoadingSpinner label="Memuat riwayat service..." />}
 
                     {!isLoadingServices && (
                       <ServiceTimeline services={services} canEdit={canEdit} />

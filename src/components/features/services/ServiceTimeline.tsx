@@ -290,6 +290,8 @@ export default function ServiceTimeline({ services, canEdit = false }: Readonly<
                         backgroundPosition="center"
                         borderWidth="1px"
                         borderColor="border"
+                        role="img"
+                        aria-label={`Foto struk service tanggal ${formatDate(service.serviceDate)}`}
                       />
                     )}
 
