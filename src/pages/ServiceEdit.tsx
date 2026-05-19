@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Container, Text, VStack } from '@chakra-ui/react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useService } from '@/hooks/useServices';
 import { ROUTES } from '@/config/constants';
 import { serviceService } from '@/services/service.service';
-import { parseApiError, FormErrors } from '@/utils/error';
+import { isForbiddenError, parseApiError, FormErrors } from '@/utils/error';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
 import ServiceForm from '@/components/features/services/ServiceForm';
@@ -17,10 +17,17 @@ export default function ServiceEdit() {
   const { id } = useParams<{ id: string }>();
   const serviceId = Number.parseInt(id ?? '0', 10);
   const navigate = useNavigate();
-  const { service, isLoading } = useService(serviceId);
+  const { service, isLoading, error } = useService(serviceId);
+  const isForbidden = isForbiddenError(error);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
   const { allowNavigation, confirmDiscard } = useUnsavedChanges({ isDirty: isFormDirty });
+
+  useEffect(() => {
+    if (isForbidden) {
+      navigate(ROUTES.FORBIDDEN, { replace: true });
+    }
+  }, [isForbidden, navigate]);
 
   const initialValues = useMemo(() => {
     if (!service) return undefined;
@@ -59,6 +66,10 @@ export default function ServiceEdit() {
       });
     },
   });
+
+  if (isForbidden) {
+    return null;
+  }
 
   if (isLoading || !service || !initialValues) {
     return (

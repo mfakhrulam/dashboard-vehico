@@ -1,10 +1,10 @@
 import { Container, VStack } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ROUTES } from '@/config/constants';
 import { toaster } from '@/components/ui/toaster';
-import { parseApiError, FormErrors } from '@/utils/error';
+import { isForbiddenError, parseApiError, FormErrors } from '@/utils/error';
 import { vehicleService } from '@/services/vehicle.service';
 import { useVehicle } from '@/hooks/useVehicles';
 import { UpdateVehicleRequest } from '@/types/vehicle.types';
@@ -22,9 +22,16 @@ export default function VehicleEdit() {
   const queryClient = useQueryClient();
 
   const { vehicle, isLoading, error } = useVehicle(vehicleId);
+  const isForbidden = isForbiddenError(error);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isFormDirty, setIsFormDirty] = useState(false);
   const { allowNavigation, confirmDiscard } = useUnsavedChanges({ isDirty: isFormDirty });
+
+  useEffect(() => {
+    if (isForbidden) {
+      navigate(ROUTES.FORBIDDEN, { replace: true });
+    }
+  }, [isForbidden, navigate]);
 
   // Mutation for update vehicle
   const updateMutation = useMutation({
@@ -70,6 +77,10 @@ export default function VehicleEdit() {
   const handleCancel = () => {
     confirmDiscard(() => navigate(ROUTES.VEHICLE_DETAIL(vehicleId)));
   };
+
+  if (isForbidden) {
+    return null;
+  }
 
   if (isLoading) {
     return (

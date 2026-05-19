@@ -17,6 +17,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  FORBIDDEN: '/forbidden',
   DASHBOARD: '/dashboard',
   VEHICLES: '/vehicles',
   GARAGE: '/garage',
