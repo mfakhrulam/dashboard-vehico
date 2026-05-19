@@ -32,14 +32,18 @@ export default function Forbidden() {
           </VStack>
 
           <HStack gap={4} pt={4} flexWrap="wrap" justify="center">
-            <Button as={RouterLink} to={ROUTES.DASHBOARD} colorPalette="brand" size="lg">
-              <Icon as={FiHome} />
-              Dashboard
-            </Button>
-            <Button as={RouterLink} to={ROUTES.GARAGE} variant="outline" size="lg">
-              <Icon as={FiTruck} />
-              Garasi Kendaraan
-            </Button>
+            <RouterLink to={ROUTES.DASHBOARD}>
+              <Button colorPalette="brand" size="lg">
+                <Icon as={FiHome} />
+                Dashboard
+              </Button>
+            </RouterLink>
+            <RouterLink to={ROUTES.GARAGE}>
+              <Button variant="outline" size="lg">
+                <Icon as={FiTruck} />
+                Garasi Kendaraan
+              </Button>
+            </RouterLink>
           </HStack>
         </VStack>
       </Container>
