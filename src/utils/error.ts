@@ -71,3 +71,8 @@ export const parseApiError = (error: unknown): {
     message: error instanceof Error ? error.message : 'Terjadi kesalahan',
   };
 };
+
+export const isForbiddenError = (error: unknown): boolean => {
+  const axiosError = error as AxiosError<ApiErrorResponse>;
+  return axiosError?.response?.status === 403;
+};

@@ -18,6 +18,7 @@ import Settings from './pages/Settings';
 import ServiceCreate from '@/pages/ServiceCreate';
 import ServiceEdit from '@/pages/ServiceEdit';
 import Services from '@/pages/Services';
+import Forbidden from '@/pages/Forbidden';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 
@@ -106,6 +107,14 @@ const router = createBrowserRouter(
         element={
           <ProtectedRoute>
             <ServiceEdit />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.FORBIDDEN}
+        element={
+          <ProtectedRoute>
+            <Forbidden />
           </ProtectedRoute>
         }
       />

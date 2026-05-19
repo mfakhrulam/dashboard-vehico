@@ -1,5 +1,5 @@
 import { Box, Button, Container, Flex, Heading, HStack, Icon, SimpleGrid, Stack, Text, VStack, Tabs } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ElementType } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,6 +7,7 @@ import { FiActivity, FiCalendar, FiDollarSign, FiEdit2, FiShare2, FiTool, FiUser
 import { useVehicle } from '@/hooks/useVehicles';
 import { useServices } from '@/hooks/useServices';
 import { ROUTES, PERMISSION_LEVELS } from '@/config/constants';
+import { isForbiddenError, parseApiError } from '@/utils/error';
 import { formatOdometer, formatDate, formatCurrency } from '@/utils/format';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/layout/PageHeader';
@@ -16,7 +17,6 @@ import MaintenanceSchedule from '@/components/features/vehicles/MaintenanceSched
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { vehicleService } from '@/services/vehicle.service';
 import { toaster } from '@/components/ui/toaster';
-import { parseApiError } from '@/utils/error';
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -25,8 +25,9 @@ export default function VehicleDetail() {
   const vehicleId = Number.parseInt(id || '0', 10);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  const { vehicle, isLoading: isLoadingVehicle } = useVehicle(vehicleId);
-  const { services, isLoading: isLoadingServices } = useServices(vehicleId);
+  const { vehicle, isLoading: isLoadingVehicle, error: vehicleError } = useVehicle(vehicleId);
+  const { services, isLoading: isLoadingServices, error: servicesError } = useServices(vehicleId);
+  const isForbidden = isForbiddenError(vehicleError) || isForbiddenError(servicesError);
 
   const latestService = services[0];
 
@@ -52,7 +53,18 @@ export default function VehicleDetail() {
     },
   });
 
+  useEffect(() => {
+    if (isForbidden) {
+      navigate(ROUTES.FORBIDDEN, { replace: true });
+    }
+  }, [isForbidden, navigate]);
+
+  if (isForbidden) {
+    return null;
+  }
+
   const isOwner = vehicle?.permission === 'owner' || !vehicle?.permission;
+
   const canEdit = vehicle?.permission === 'owner' || vehicle?.permission === 'edit';
 
   const handleDeleteVehicle = () => {
